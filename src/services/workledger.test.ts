@@ -1,0 +1,243 @@
+import { database } from "@/db/database";
+import { ledgerService } from "@/services/workledger";
+
+async function seedOrganization(): Promise<{
+  clientId: string;
+  projectId: string;
+}> {
+  await ledgerService.saveProfile({
+    displayName: "Ramez Gamel",
+    legalName: "",
+    email: "ramez@example.com",
+    phone: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    region: "",
+    postalCode: "",
+    countryCode: "",
+    taxIdentifier: "",
+    accountName: "Ramez Gamel",
+    bankName: "Example Bank",
+    accountReference: "ACC-123",
+    swiftBic: "",
+    paymentInstructions: "",
+  });
+  const client = await ledgerService.createClient({
+    displayName: "Northstar",
+    legalName: "",
+    companyName: "Northstar Studio",
+    email: "billing@example.com",
+    phone: "",
+    defaultCurrency: "USD",
+    invoiceNotes: "",
+  });
+  const project = await ledgerService.createProject({
+    clientId: client.id,
+    name: "Product delivery",
+    description: "",
+    hourlyRateMinor: 1_500,
+    currency: "USD",
+    timeZone: "Africa/Cairo",
+    colorToken: "blue",
+    startDate: "",
+    endDate: "",
+  });
+  return { clientId: client.id, projectId: project.id };
+}
+
+describe("WorkLedger application service", () => {
+  beforeEach(async () => {
+    await database.delete();
+    await database.open();
+  });
+
+  afterEach(async () => {
+    vi.useRealTimers();
+    await database.delete();
+  });
+
+  it("stores organization, manual work, and audit records atomically", async () => {
+    const { projectId } = await seedOrganization();
+    const created = await ledgerService.addManualSession({
+      projectId,
+      taskId: null,
+      workDate: "2026-09-20",
+      mode: "duration",
+      startTime: "",
+      endTime: "",
+      breakMinutes: 0,
+      hours: 4,
+      minutes: 30,
+      description: "Implemented the approved workflow",
+      billable: true,
+      hourlyRateMinorOverride: null,
+      incomplete: false,
+    });
+    const snapshot = await ledgerService.getSnapshot();
+    expect(snapshot.sessions).toHaveLength(1);
+    expect(created.durationSeconds).toBe(16_200);
+    expect(
+      snapshot.auditEvents.some(
+        (event) =>
+          event.entityType === "WorkSession" && event.entityId === created.id,
+      ),
+    ).toBe(true);
+  });
+
+  it("edits organization defaults without rewriting historical work", async () => {
+    const { clientId, projectId } = await seedOrganization();
+    const task = await ledgerService.createTask({
+      projectId,
+      name: "Implementation",
+      description: "",
+    });
+    const session = await ledgerService.addManualSession({
+      projectId,
+      taskId: task.id,
+      workDate: "2026-09-20",
+      mode: "duration",
+      startTime: "",
+      endTime: "",
+      breakMinutes: 0,
+      hours: 2,
+      minutes: 0,
+      description: "Historical delivery",
+      billable: true,
+      hourlyRateMinorOverride: null,
+      incomplete: false,
+    });
+
+    await ledgerService.updateClient(clientId, {
+      displayName: "Northstar Labs",
+      legalName: "",
+      companyName: "Northstar Studio",
+      email: "accounts@example.com",
+      phone: "",
+      defaultCurrency: "EUR",
+      invoiceNotes: "Updated terms",
+    });
+    await ledgerService.updateProject(projectId, {
+      clientId,
+      name: "Product delivery V2",
+      description: "Current defaults",
+      hourlyRateMinor: 3_000,
+      currency: "EUR",
+      timeZone: "Europe/Berlin",
+      colorToken: "blue",
+      startDate: "",
+      endDate: "",
+    });
+    await ledgerService.updateTask(task.id, {
+      projectId,
+      name: "Build",
+      description: "Current label",
+    });
+
+    const historical = await database.workSessions.get(session.id);
+    expect(historical?.hourlyRateMinorSnapshot).toBe(1_500);
+    expect(historical?.currencySnapshot).toBe("USD");
+    expect(historical?.timeZone).toBe("Africa/Cairo");
+    expect(historical?.taskNameSnapshot).toBe("Implementation");
+    expect(
+      (await database.auditEvents.toArray()).filter(
+        (event) => event.action === "updated",
+      ),
+    ).toHaveLength(3);
+  });
+
+  it("persists pause and resume segments and excludes the paused interval", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-20T09:00:00.000Z"));
+    const { projectId } = await seedOrganization();
+    const active = await ledgerService.startTimer({
+      projectId,
+      taskId: null,
+      description: "Tracked delivery",
+      billable: true,
+    });
+    vi.setSystemTime(new Date("2026-09-20T10:00:00.000Z"));
+    await ledgerService.pauseTimer(active.id);
+    vi.setSystemTime(new Date("2026-09-20T10:30:00.000Z"));
+    await ledgerService.resumeTimer(active.id);
+    vi.setSystemTime(new Date("2026-09-20T11:00:00.000Z"));
+    await ledgerService.stopTimer(active.id);
+    const completed = await database.workSessions.get(active.id);
+    expect(completed?.status).toBe("completed");
+    expect(completed?.durationSeconds).toBe(5_400);
+    expect(
+      await database.sessionSegments
+        .where("sessionId")
+        .equals(active.id)
+        .count(),
+    ).toBe(2);
+  });
+
+  it("partitions a running timer when pause crosses local midnight", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-20T20:30:00.000Z"));
+    const { projectId } = await seedOrganization();
+    const active = await ledgerService.startTimer({
+      projectId,
+      taskId: null,
+      description: "Late deployment",
+      billable: true,
+    });
+    vi.setSystemTime(new Date("2026-09-20T22:30:00.000Z"));
+    await ledgerService.pauseTimer(active.id);
+    const sessions = await database.workSessions.toArray();
+    expect(sessions).toHaveLength(2);
+    expect(sessions.map((item) => item.workDate).sort()).toEqual([
+      "2026-09-20",
+      "2026-09-21",
+    ]);
+    expect(sessions.reduce((sum, item) => sum + item.durationSeconds, 0)).toBe(
+      7_200,
+    );
+    expect(sessions.filter((item) => item.status === "paused")).toHaveLength(1);
+  });
+
+  it("issues an immutable invoice snapshot with deterministic numbering", async () => {
+    const { clientId, projectId } = await seedOrganization();
+    const created = await ledgerService.addManualSession({
+      projectId,
+      taskId: null,
+      workDate: "2026-09-20",
+      mode: "duration",
+      startTime: "",
+      endTime: "",
+      breakMinutes: 0,
+      hours: 3,
+      minutes: 30,
+      description: "Completed delivery",
+      billable: true,
+      hourlyRateMinorOverride: null,
+      incomplete: false,
+    });
+    const draft = await ledgerService.createInvoiceDraft({
+      clientId,
+      currency: "USD",
+      periodStart: "2026-09-01",
+      periodEnd: "2026-09-30",
+      sessionIds: [created.id],
+      notes: "",
+    });
+    const issued = await ledgerService.issueInvoice(
+      draft.id,
+      "2026-09-20",
+      "2026-10-04",
+    );
+    expect(issued.invoiceNumber).toBe("INV-2026-001");
+    expect(issued.status).toBe("issued");
+    expect(issued.totalMinor).toBe(5_250);
+    await expect(
+      ledgerService.updateSessionDetails({
+        sessionId: created.id,
+        description: "Changed",
+        taskId: null,
+        billable: true,
+        reason: "Correction",
+      }),
+    ).rejects.toThrow(/frozen/i);
+  });
+});

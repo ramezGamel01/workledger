@@ -1,0 +1,17 @@
+/node_modules/
+/dist/
+/coverage/
+/playwright-report/
+/test-results/
+/.sites-runtime/
+/.wrangler/
+/.agents/
+/.codex/
+/outputs/
+/work/
+.env
+.env.*
+!.env.example
+*.local
+*.log
+.DS_Store
