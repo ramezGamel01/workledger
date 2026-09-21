@@ -16,7 +16,12 @@ import { useOutletContext } from "react-router-dom";
 import { useUiStore } from "@/app/store";
 import { Badge, Button, Field, PageHeader } from "@/components/ui";
 import type { LedgerSnapshot } from "@/domain/models";
+import { useCloudStatus } from "@/hooks/useLedger";
 import { backupService, type BackupPreview } from "@/services/backup";
+import {
+  resolveCloudConflictWithCloud,
+  resolveCloudConflictWithLocal,
+} from "@/services/cloud";
 import { userMessage } from "@/services/errors";
 import { ledgerService } from "@/services/workledger";
 
@@ -35,6 +40,7 @@ function humanBytes(bytes: number): string {
 
 export function SettingsPage(): React.JSX.Element {
   const snapshot = useOutletContext<LedgerSnapshot>();
+  const cloudStatus = useCloudStatus();
   const pushToast = useUiStore((state) => state.pushToast);
   const profile = snapshot.profile;
   const [displayName, setDisplayName] = useState(profile?.displayName ?? "");
@@ -184,15 +190,70 @@ export function SettingsPage(): React.JSX.Element {
   const usagePercent = storage?.quota
     ? Math.min(100, Math.round((storage.usage / storage.quota) * 100))
     : 0;
+  const resolveConflict = async (choice: "local" | "cloud") => {
+    const confirmed = window.confirm(
+      choice === "local"
+        ? "Replace the private cloud ledger with this device copy? Export a backup first if you need the cloud copy."
+        : "Replace this device copy with the private cloud ledger? Export a backup first if you need this device copy.",
+    );
+    if (!confirmed) return;
+    setBusy(`resolve-${choice}`);
+    setError(null);
+    try {
+      if (choice === "local") await resolveCloudConflictWithLocal();
+      else await resolveCloudConflictWithCloud();
+      pushToast(
+        "success",
+        choice === "local"
+          ? "Private cloud replaced with this device copy."
+          : "This device now matches the private cloud.",
+      );
+    } catch (caught) {
+      setError(userMessage(caught));
+    } finally {
+      setBusy(null);
+    }
+  };
   return (
     <div className="page">
       <PageHeader
         eyebrow="Identity & continuity"
         title="Settings"
-        description="Profile, billing defaults, local storage, and complete backup recovery."
+        description="Profile, billing defaults, private cloud continuity, local cache, and complete backup recovery."
       />
       {error ? (
         <div className="inline-alert inline-alert--error">{error}</div>
+      ) : null}
+      {cloudStatus.state === "conflict" ? (
+        <section className="panel settings-card settings-card--wide cloud-conflict-card">
+          <header className="panel__header">
+            <div>
+              <h2>Choose the ledger to keep</h2>
+              <p>{cloudStatus.message}</p>
+            </div>
+            <Database size={21} />
+          </header>
+          <div className="inline-alert inline-alert--warning">
+            Export the copy you may need before choosing. This is a complete
+            replacement, not a merge.
+          </div>
+          <div className="form-actions">
+            <Button
+              variant="danger"
+              disabled={busy?.startsWith("resolve-")}
+              onClick={() => void resolveConflict("local")}
+            >
+              <HardDrive size={16} /> Keep this device copy
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={busy?.startsWith("resolve-")}
+              onClick={() => void resolveConflict("cloud")}
+            >
+              <Database size={16} /> Use private cloud copy
+            </Button>
+          </div>
+        </section>
       ) : null}
       <section className="settings-grid">
         <form
@@ -398,9 +459,10 @@ export function SettingsPage(): React.JSX.Element {
         <section className="panel settings-card">
           <header className="panel__header">
             <div>
-              <h2>Local storage</h2>
+              <h2>Local cache</h2>
               <p>
-                Browser persistence reduces eviction risk but is not a backup.
+                WorkLedger syncs to your private cloud and keeps this browser
+                ready for fast, resilient access.
               </p>
             </div>
             <HardDrive size={21} />
@@ -461,8 +523,8 @@ export function SettingsPage(): React.JSX.Element {
               <span className="settings-kicker">Export</span>
               <h3>Protect everything now</h3>
               <p>
-                Download a consistent snapshot. Keep it somewhere safe outside
-                this browser.
+                Download a consistent portable snapshot as an extra recovery
+                copy outside WorkLedger.
               </p>
               <Button
                 disabled={busy === "export"}

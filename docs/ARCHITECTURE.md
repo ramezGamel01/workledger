@@ -1,14 +1,16 @@
 # WorkLedger architecture
 
-- **Document status:** Accepted Phase 0 baseline
-- **Architecture version:** 0.1.0
-- **Last updated:** 2026-09-20
+- **Document status:** Accepted cloud-continuity architecture
+- **Architecture version:** 1.1.0
+- **Last updated:** 2026-09-21
 
 ## 1. Context
 
-WorkLedger is a local-first, single-user web application that stores time records, billing data, and potentially confidential proof-of-work files. V1 has no application backend. The browser is the runtime and IndexedDB is the authoritative store.
-
-The architecture must make a future API-backed version possible without forcing the V1 UI to understand storage details.
+WorkLedger is a private, single-user web application that stores time records,
+billing data, and potentially confidential proof-of-work files. D1 is the
+cross-device structured store, R2 is the binary evidence store, and IndexedDB
+is the hydrated local working cache. The private Site hosting boundary supplies
+the authenticated owner identity.
 
 ## 2. Architectural goals
 
@@ -23,12 +25,13 @@ The architecture must make a future API-backed version possible without forcing 
 
 ## 3. Constraints
 
-- One local owner; no authentication or authorization model in V1.
-- Static web application deployed on a stable HTTPS origin.
+- One authenticated owner; no team, invitation, or role model.
+- Server-backed private Site deployed on a stable HTTPS origin.
 - Browser storage quotas and eviction policies vary by browser and device.
 - IndexedDB is durable browser storage, but it is not a guaranteed backup.
 - The application may be open in several tabs at once.
-- Confidential evidence must not leave the device through product behavior.
+- Confidential evidence may leave the device only for owner-authenticated R2
+  persistence or an explicit report/backup action.
 - Browser and operating-system storage encryption are outside the application's control.
 
 ## 4. Technology baseline
@@ -36,9 +39,12 @@ The architecture must make a future API-backed version possible without forcing 
 | Concern              | Approved choice                | Purpose                                              |
 | -------------------- | ------------------------------ | ---------------------------------------------------- |
 | UI runtime           | React + TypeScript             | Component model and type-safe feature code           |
-| Build                | Vite                           | Fast static application build                        |
+| Build                | Vite + Vinext                  | Worker server bundle plus client assets              |
 | Routing              | React Router                   | Multi-screen client-side navigation                  |
 | Local database       | Dexie + IndexedDB              | Structured records, indexes, transactions, and blobs |
+| Server runtime       | Vinext + Cloudflare Worker     | Authenticated API routes on the private Site         |
+| Cloud database       | D1                             | Versioned owner-scoped structured snapshots          |
+| Cloud file storage   | R2                             | Owner-scoped original evidence blobs                 |
 | Transient state      | Zustand                        | UI coordination and active timer presentation only   |
 | Forms                | React Hook Form + Zod          | Input state plus shared validation schemas           |
 | Dates                | date-fns                       | Formatting and date arithmetic                       |
@@ -55,11 +61,10 @@ One timezone helper compatible with `date-fns` may be approved in Phase 1 if nat
 ```mermaid
 flowchart TD
     UI["React screens and feature UI"] --> APP["Application services"]
-    APP --> DOMAIN["Domain rules and models"]
-    APP --> PORTS["Repository ports"]
-    REPO["Dexie repository adapters"] --> PORTS
-    REPO --> DB["IndexedDB"]
-    APP --> DOCS["PDF and backup adapters"]
+    APP --> CACHE["Dexie / IndexedDB cache"]
+    APP --> SYNC["Cloud sync service"]
+    SYNC --> D1["D1 snapshot chunks"]
+    SYNC --> R2["R2 evidence"]
 ```
 
 Dependency direction is inward:
@@ -121,6 +126,8 @@ Infrastructure contains:
 - Blob URL and file handling.
 - PDF rendering adapters.
 - ZIP/checksum backup adapters.
+- Authenticated cloud API routes, optimistic snapshot versions, and retry state.
+- D1 migration definitions and R2 evidence adapters.
 - Download and browser capability adapters.
 
 Infrastructure errors are translated into stable application error codes.
@@ -243,9 +250,14 @@ Session creation and evidence persistence are separate commands by design:
 
 Within one evidence command, metadata and its blob commit atomically as one `EvidenceAsset` record.
 
+After the local evidence command succeeds, cloud synchronization uploads the
+blob to R2 before committing the structured snapshot that references it. A
+remote upload failure never rolls back the already valid local work session or
+evidence record; it leaves a visible pending-sync state.
+
 ## 9. State ownership
 
-### IndexedDB is authoritative for
+### IndexedDB is the local working cache for
 
 - Freelancer profile and settings.
 - Clients, projects, and tasks.
@@ -253,6 +265,16 @@ Within one evidence command, metadata and its blob commit atomically as one `Evi
 - Evidence metadata and blobs.
 - Audit events.
 - Invoices, invoice lines, and invoice-session links.
+
+### D1 and R2 are authoritative across devices for
+
+- The latest complete owner-scoped structured ledger snapshot in D1.
+- A bounded recent history of structured snapshot versions.
+- Original screenshot and file evidence in owner-scoped R2 keys.
+
+The first cloud-backed load uploads existing IndexedDB data when the owner has
+no cloud snapshot. Later loads hydrate IndexedDB from the latest complete cloud
+version unless the device has a pending local write or an unresolved conflict.
 
 ### Zustand may hold
 
@@ -281,6 +303,12 @@ Business data, evidence, rates, and invoice contents do not belong in `localStor
 - Stable identifiers are generated with `crypto.randomUUID()`.
 - Records use explicit timestamps rather than implicit Dexie metadata.
 - Fields required for filtering are indexed; large JSON or blob content is not indexed.
+
+The browser database remains at Dexie version 1 because the local entity shape
+does not change. Cloud schema migrations are additive SQL files generated from
+`db/schema.ts`. D1 stores structured snapshots in bounded ordered chunks so no
+row approaches the platform's 2 MB row limit. R2 stores binary content outside
+the structured snapshot.
 
 ### 10.2 Initial logical tables
 
@@ -424,8 +452,10 @@ Raw storage exceptions may be retained as a non-sensitive `cause` for developmen
 
 ## 17. Privacy and security
 
-- No analytics, advertising, remote logging, or telemetry in V1.
-- No evidence or backup upload from product code.
+- No analytics, advertising, or remote application logging.
+- Evidence uploads only to the owner's private R2 namespace as part of the
+  explicitly requested continuity feature. Backup archives are downloaded by
+  the owner and are not uploaded automatically.
 - Prefer bundled or system fonts and icons so ordinary use has no external asset requests.
 - Use a restrictive Content Security Policy compatible with the selected build.
 - Sanitize filenames for downloads and never execute uploaded content.
@@ -487,15 +517,20 @@ Tests use deterministic clocks, IDs, locale, and timezone fixtures.
 
 ## 20. Build and deployment
 
-- V1 builds to static assets.
-- The deployed origin must remain stable because IndexedDB is origin-scoped.
+- The application builds to a Vinext Worker entry and client assets.
+- The deployed origin remains stable so the existing IndexedDB ledger can be
+  migrated automatically and continue serving as a local cache.
 - Production uses HTTPS.
+- Production binds logical `DB` and `BUCKET` resources and applies additive D1
+  migrations before serving the release.
 - Build output contains no credentials or private sample data.
 - Release notes call out schema migrations and backup format changes.
 - Deployment is not a durability mechanism; users are prompted to keep backups.
 
-## 21. Evolution boundary for V2
+## 21. Evolution boundary
 
-A server-backed V2 may introduce authentication, PostgreSQL, object storage, and synchronization. The intended replacement boundary is the repository and infrastructure layer.
-
-V2 still requires explicit decisions for conflict resolution, tenant isolation, encryption, retention, access control, upload security, and migration of local V1 data. No V1 code should pretend those decisions already exist.
+The cloud release deliberately remains single-owner and snapshot-oriented.
+Teams, collaborative merges, granular server-side commands, retention controls,
+customer-managed encryption, and public account administration remain future
+decisions. The current version detects competing snapshot writers and preserves
+the local copy instead of silently guessing how to merge financial history.

@@ -1,14 +1,14 @@
 # WorkLedger architectural decisions
 
 - **Document status:** Accepted V1 decisions
-- **Decision log version:** 1.0.0
-- **Last updated:** 2026-09-20
+- **Decision log version:** 1.1.0
+- **Last updated:** 2026-09-21
 
 Each decision is binding until a later accepted decision explicitly supersedes it. A code change must not silently rewrite an accepted decision.
 
 ## ADR-001 — V1 is local-first
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-023
 - **Date:** 2026-09-20
 
 ### Context
@@ -33,7 +33,7 @@ V1 stores canonical data in browser IndexedDB and performs no product-managed up
 
 ## ADR-002 — React, TypeScript, and Vite form the UI baseline
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-023
 - **Date:** 2026-09-20
 
 ### Context
@@ -152,7 +152,7 @@ A session captures the rate, currency, timezone, and current task label needed t
 
 ## ADR-008 — IndexedDB stores evidence blobs in independent records
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-023
 - **Date:** 2026-09-20
 
 ### Context
@@ -303,7 +303,7 @@ Generate a clean invoice PDF and a separate work-activity report PDF. Evidence e
 
 ## ADR-016 — V1 is single-user and has no application authentication
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-023
 - **Date:** 2026-09-20
 
 ### Context
@@ -341,7 +341,7 @@ Archive clients, projects, and tasks. Soft-delete eligible sessions and evidence
 
 ## ADR-018 — Use a stable HTTPS origin for production
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-023
 - **Date:** 2026-09-20
 
 ### Context
@@ -360,7 +360,7 @@ V1 is a static production build deployed to one stable private HTTPS origin. Ori
 
 ## ADR-019 — No analytics, telemetry, or remote asset dependency in V1
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-023
 - **Date:** 2026-09-20
 
 ### Context
@@ -449,6 +449,63 @@ to either adapter.
   browser.
 - Both dependencies are documented implementation adapters rather than hidden
   sources of domain policy.
+
+## ADR-023 — Private cloud continuity supersedes local-only persistence
+
+- **Status:** Accepted
+- **Date:** 2026-09-21
+
+### Context
+
+The owner explicitly requested that all WorkLedger data remain available after
+closing the browser, clearing or changing a browser, and moving between their
+devices. IndexedDB on one origin cannot provide that guarantee, and evidence
+files are too large and sensitive to place inside structured JSON.
+
+### Decision
+
+Deploy WorkLedger as a private server-backed Site while preserving its
+single-owner product model and local transactional behavior.
+
+- The trusted Site authentication boundary supplies the owner identifier and
+  email to server routes; WorkLedger adds no password or public registration
+  flow.
+- D1 stores owner-scoped, monotonically versioned `LedgerSnapshot` JSON in
+  bounded ordered chunks. Composite version keys reject competing writes.
+- R2 stores original screenshot and file evidence under an owner-prefixed key.
+- IndexedDB remains the local working cache and offline/pending-write safety
+  layer, but the latest complete cloud snapshot is authoritative across
+  devices.
+- On first load, an existing local ledger is uploaded only when the owner has
+  no cloud snapshot. Later loads hydrate the cache from cloud.
+- Each local mutation queues an evidence-first cloud write. Network failure
+  preserves the local result and a retry marker; a version conflict is surfaced
+  and never resolved through silent last-write-wins behavior.
+- Validated ZIP backup/restore remains a separate portable recovery mechanism.
+- Analytics and remote application logging remain prohibited.
+
+Use Vinext and the Cloudflare Worker adapter because a static build cannot
+expose the authenticated D1/R2 routes required by this decision.
+
+### Consequences
+
+- Normal close/reopen and same-account device changes load the same cloud data.
+- Existing same-origin V1 data migrates without a destructive IndexedDB schema
+  change.
+- Evidence is intentionally uploaded to the owner's private R2 namespace, so
+  local-only confidentiality language is no longer accurate.
+- Simultaneous edits from stale devices stop with a visible conflict. Automated
+  semantic merge of financial and audit records remains out of scope.
+- D1 and R2 availability become operational dependencies, while the local cache
+  and ZIP export contain transient outages and provide recovery options.
+
+### Superseded decisions
+
+ADR-023 supersedes ADR-001, ADR-002's static-build conclusion, ADR-008's
+local-only binary authority, ADR-016's no-authentication runtime assumption,
+ADR-018's static deployment decision, and ADR-019's prohibition on evidence
+upload. The no-analytics and no-telemetry portion of ADR-019 remains binding
+through this decision.
 
 ## Decision change process
 

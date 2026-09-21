@@ -132,3 +132,60 @@ export async function getLedgerSnapshot(): Promise<LedgerSnapshot> {
     auditEvents,
   };
 }
+
+export async function replaceLedgerSnapshot(
+  snapshot: LedgerSnapshot,
+): Promise<void> {
+  await database.transaction(
+    "rw",
+    [
+      database.freelancerProfiles,
+      database.appSettings,
+      database.clients,
+      database.projects,
+      database.tasks,
+      database.workSessions,
+      database.sessionSegments,
+      database.evidenceAssets,
+      database.auditEvents,
+      database.invoices,
+      database.invoiceLines,
+      database.invoiceSessionLinks,
+      database.invoiceSequences,
+    ],
+    async () => {
+      await Promise.all([
+        database.freelancerProfiles.clear(),
+        database.appSettings.clear(),
+        database.clients.clear(),
+        database.projects.clear(),
+        database.tasks.clear(),
+        database.workSessions.clear(),
+        database.sessionSegments.clear(),
+        database.evidenceAssets.clear(),
+        database.auditEvents.clear(),
+        database.invoices.clear(),
+        database.invoiceLines.clear(),
+        database.invoiceSessionLinks.clear(),
+        database.invoiceSequences.clear(),
+      ]);
+      if (snapshot.profile) {
+        await database.freelancerProfiles.add(snapshot.profile);
+      }
+      await database.appSettings.add(snapshot.settings);
+      await Promise.all([
+        database.clients.bulkAdd(snapshot.clients),
+        database.projects.bulkAdd(snapshot.projects),
+        database.tasks.bulkAdd(snapshot.tasks),
+        database.workSessions.bulkAdd(snapshot.sessions),
+        database.sessionSegments.bulkAdd(snapshot.segments),
+        database.evidenceAssets.bulkAdd(snapshot.evidence),
+        database.auditEvents.bulkAdd(snapshot.auditEvents),
+        database.invoices.bulkAdd(snapshot.invoices),
+        database.invoiceLines.bulkAdd(snapshot.invoiceLines),
+        database.invoiceSessionLinks.bulkAdd(snapshot.invoiceLinks),
+        database.invoiceSequences.bulkAdd(snapshot.invoiceSequences),
+      ]);
+    },
+  );
+}

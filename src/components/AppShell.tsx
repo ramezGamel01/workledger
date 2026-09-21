@@ -5,6 +5,7 @@ import {
   CalendarClock,
   ChevronRight,
   Clock3,
+  CloudOff,
   FileCheck2,
   Gauge,
   Menu,
@@ -24,7 +25,8 @@ import { GlobalDialogs } from "@/features/dialogs/GlobalDialogs";
 import { Button, LoadingScreen, ToastRegion } from "@/components/ui";
 import { formatTimer } from "@/domain/format";
 import type { LedgerSnapshot } from "@/domain/models";
-import { useLedger, useNow } from "@/hooks/useLedger";
+import type { CloudSyncStatus } from "@/services/cloud";
+import { useCloudStatus, useLedger, useNow } from "@/hooks/useLedger";
 import { useWebMcp } from "@/hooks/useWebMcp";
 
 const navGroups = [
@@ -76,8 +78,10 @@ function activeElapsed(snapshot: LedgerSnapshot, now: number): number {
 
 function Sidebar({
   snapshot,
+  cloudStatus,
 }: {
   snapshot: LedgerSnapshot;
+  cloudStatus: CloudSyncStatus;
 }): React.JSX.Element {
   const open = useUiStore((state) => state.sidebarOpen);
   const setOpen = useUiStore((state) => state.setSidebarOpen);
@@ -97,7 +101,7 @@ function Sidebar({
           <div className="brand-mark">WL</div>
           <div>
             <strong>WorkLedger</strong>
-            <span>Local work records</span>
+            <span>Private cloud ledger</span>
           </div>
           <button
             type="button"
@@ -145,16 +149,30 @@ function Sidebar({
             <span>Settings</span>
             <ChevronRight size={15} className="nav-link__arrow" />
           </NavLink>
-          <div className="local-status">
-            <span className="local-status__dot" />
+          <div className="local-status" title={cloudStatus.message}>
+            <span
+              className={`local-status__dot local-status__dot--${cloudStatus.state}`}
+            />
             <div>
-              <strong>Saved on this device</strong>
+              <strong>
+                {cloudStatus.state === "synced"
+                  ? "Saved to private cloud"
+                  : cloudStatus.state === "connecting" ||
+                      cloudStatus.state === "syncing"
+                    ? "Cloud sync in progress"
+                    : cloudStatus.state === "conflict"
+                      ? "Sync needs attention"
+                      : "Cloud sync queued"}
+              </strong>
               <span>
                 {snapshot.profile
                   ? snapshot.profile.displayName
                   : "Setup required"}
               </span>
             </div>
+            <span className="sr-only" aria-live="polite">
+              {cloudStatus.message}
+            </span>
           </div>
         </div>
         <span className="sr-only" aria-live="polite">
@@ -197,6 +215,7 @@ function ActiveTimerStrip({
 
 export function AppShell(): React.JSX.Element {
   const { snapshot, loading, error } = useLedger();
+  const cloudStatus = useCloudStatus();
   useWebMcp();
   const setOpen = useUiStore((state) => state.setSidebarOpen);
   const openDialog = useUiStore((state) => state.openDialog);
@@ -215,7 +234,7 @@ export function AppShell(): React.JSX.Element {
   }
   return (
     <div className="app-shell">
-      <Sidebar snapshot={snapshot} />
+      <Sidebar snapshot={snapshot} cloudStatus={cloudStatus} />
       <div className="app-frame">
         <header className="mobile-header">
           <button
@@ -242,7 +261,7 @@ export function AppShell(): React.JSX.Element {
         <div className="desktop-commandbar">
           <div className="privacy-pill">
             <ShieldCheck size={16} />
-            <span>Private · local-first</span>
+            <span>Private · cloud-backed</span>
           </div>
           <Button
             variant="secondary"
@@ -253,6 +272,16 @@ export function AppShell(): React.JSX.Element {
             Add previous work
           </Button>
         </div>
+        {cloudStatus.state === "pending" || cloudStatus.state === "conflict" ? (
+          <div
+            className={`cloud-sync-banner cloud-sync-banner--${cloudStatus.state}`}
+            role={cloudStatus.state === "conflict" ? "alert" : "status"}
+          >
+            <CloudOff size={18} />
+            <span>{cloudStatus.message}</span>
+            <NavLink to="/settings">Open Settings</NavLink>
+          </div>
+        ) : null}
         <ActiveTimerStrip snapshot={snapshot} />
         <main className="main-content">
           <Outlet context={snapshot} />

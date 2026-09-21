@@ -1,22 +1,23 @@
 # WorkLedger
 
-WorkLedger is a local-first work tracking application for hourly contractors. It records live and historical work, keeps proof of work beside the time it supports, calculates earnings, and produces professional invoices and work-activity reports.
+WorkLedger is a private cloud-backed work tracking application for hourly contractors. It records live and historical work, keeps proof of work beside the time it supports, calculates earnings, and produces professional invoices and work-activity reports.
 
 ## Current state
 
-**WorkLedger V1 is complete and prepared for its private production release.**
+**WorkLedger V1.1 adds private cloud continuity to the complete V1 product.**
 
-The application now covers the full local-first workflow: freelancer setup,
+The application covers the full workflow: freelancer setup,
 clients, projects and tasks, historical entry, a resilient live timer, proof of
 work, logs and timesheets, earnings analysis, immutable invoices, invoice and
 work-report PDFs, read-only audit history, plus validated ZIP backup and atomic
-restore.
+restore. D1 now persists structured records across devices, R2 persists evidence
+files, and IndexedDB remains the fast local cache and pending-write safety layer.
 
-Formatting, linting, strict type checking, 13 deterministic tests, and the
-production build pass. A Chromium smoke specification is included; its local
-execution is unavailable in this managed runtime because no launchable browser
-binary is exposed. This environment limitation does not affect the deployed
-static application.
+Formatting, linting, strict type checking, 15 deterministic tests, and the
+server-backed production build pass. A Chromium smoke specification is
+included; its local execution is unavailable in this managed runtime because
+no launchable browser binary is exposed. This environment limitation does not
+affect the deployed application.
 
 The Phase 0 baseline is defined by:
 
@@ -42,11 +43,14 @@ Client → Project → Work Session → Evidence
                 Invoice / Work Report
 ```
 
-## V1 technology baseline
+## Technology baseline
 
-- React, TypeScript, and Vite
+- React, TypeScript, Vite, and Vinext
 - React Router
-- Dexie over IndexedDB
+- Dexie over IndexedDB for the local working cache
+- D1 for versioned structured cloud snapshots
+- R2 for private evidence files
+- Private Site authentication headers for owner isolation
 - Zustand for transient application state only
 - React Hook Form and Zod
 - date-fns, with one approved timezone adapter if implementation proves it necessary
@@ -57,14 +61,17 @@ Client → Project → Work Session → Evidence
 
 ## Privacy and continuity
 
-- Canonical records and evidence stay in browser IndexedDB on the production
-  origin.
-- WorkLedger has no application account, analytics, telemetry, cloud sync, or
-  automatic evidence upload.
-- Export a complete ZIP from **Settings → Backup & restore** before clearing
-  browser data, changing devices, or moving to a different origin.
+- Records and evidence synchronize to owner-scoped private cloud storage and
+  remain cached in browser IndexedDB.
+- WorkLedger has no public signup, team roles, analytics, telemetry, or remote
+  application logging.
+- Existing data from the stable production origin migrates automatically when
+  the cloud ledger is empty.
+- Export a complete ZIP from **Settings → Backup & restore** as an additional
+  portable recovery copy and before resolving a reported version conflict.
 - Restoring a backup validates versions, references, paths, and checksums before
-  replacing the current local dataset atomically.
+  replacing the current local dataset atomically, then synchronizes the restored
+  state to cloud.
 
 ## Development
 

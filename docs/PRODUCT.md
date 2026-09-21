@@ -1,9 +1,9 @@
 # WorkLedger product specification
 
-- **Document status:** Accepted Phase 0 baseline
-- **Baseline version:** 0.1.0
-- **Last updated:** 2026-09-20
-- **Product type:** Local-first single-user web application
+- **Document status:** Accepted cloud-continuity release
+- **Baseline version:** 1.1.0
+- **Last updated:** 2026-09-21
+- **Product type:** Private single-user cloud-backed web application with a local cache
 
 ## 1. Product statement
 
@@ -28,12 +28,12 @@ The same work session drives the work log, timesheet, earnings, reports, invoice
 ## 3. Product principles
 
 1. **Sessions are the source of truth.** Derived screens do not maintain competing totals.
-2. **Data stays local in V1.** No evidence or billing data is uploaded by WorkLedger.
+2. **Data survives browser and device changes.** Records sync to a private owner-scoped cloud store while IndexedDB remains the fast local working cache.
 3. **Past work is first-class.** The user can enter work completed before installation.
 4. **Money is explainable.** Every displayed total can be traced to billable sessions and frozen rates.
 5. **History is preserved.** Material edits create audit events; issued invoices remain immutable.
 6. **Failure is contained.** An attachment failure must not destroy time already recorded.
-7. **The product is useful before it is broad.** V1 solves one contractor's workflow well; teams, cloud sync, and surveillance features are not included.
+7. **The product is useful before it is broad.** This release solves one contractor's workflow well; teams, collaborative editing, and surveillance features are not included.
 
 ## 4. Canonical product flow
 
@@ -81,7 +81,7 @@ Export backup
 ### 5.3 Work documentation
 
 - Description on every completed session.
-- Screenshot and file evidence stored locally.
+- Screenshot and file evidence stored in private object storage and cached locally.
 - Link evidence with captions.
 - Evidence attached to a specific session or to a project day.
 - Evidence count and thumbnails in work records.
@@ -110,14 +110,15 @@ Export backup
 - Versioned database migrations.
 - Validated ZIP backup with evidence files.
 - Restore preview and atomic restore.
+- Authenticated cloud persistence and automatic migration of the existing local ledger.
 - Responsive desktop and mobile workflows.
 
 ## 6. Explicit V1 non-goals
 
 The following are not part of V1:
 
-- User accounts, passwords, or server authentication.
-- Cloud sync or cross-device synchronization.
+- In-app passwords, public registration, or account administration; private Site authentication supplies the owner identity.
+- Team-oriented multi-user synchronization or collaborative editing.
 - Team members, approvals, permissions, or manager dashboards.
 - Automatic desktop screenshots, activity monitoring, keystroke tracking, or surveillance.
 - Native desktop or mobile applications.
@@ -143,7 +144,7 @@ The user can:
 3. Create a project with timezone, currency, and hourly rate.
 4. Reach an immediately usable dashboard.
 
-**Outcome:** setup data is stored locally and can be edited without changing snapshots already frozen in issued invoices.
+**Outcome:** setup data is cached locally and synchronized to the owner's private cloud without changing snapshots already frozen in issued invoices.
 
 ### 7.2 Add previous work
 
@@ -167,7 +168,7 @@ The user selects a project and optional task, enters or selects a description, a
 
 The user can attach screenshots, files, or links to a session, or add general proof for a project day.
 
-**Outcome:** evidence failure is reported independently. Existing time remains intact, and the user can retry the evidence operation.
+**Outcome:** evidence failure is reported independently. Existing time remains intact, and the user can retry the private upload.
 
 ### 7.5 Review work and earnings
 
@@ -267,7 +268,7 @@ Settings
 - Freelancer profile.
 - Locale, timezone, week start, date/time formats.
 - Invoice numbering and payment details.
-- Storage usage.
+- Local-cache storage usage and cloud-sync state.
 - Backup export and restore.
 
 ## 10. UX and visual direction
@@ -317,9 +318,10 @@ V1 is successful when the user can:
 
 ## 13. Baseline assumptions
 
-- V1 has one local owner and no role model.
+- The release has one authenticated owner and no team/role model.
 - Default timezone may be set to `Africa/Cairo` during onboarding but remains configurable before the first project is saved.
 - Default display currency may be USD but every project explicitly stores an ISO 4217 currency.
 - English is the initial application language; localization is deferred.
-- The application is deployed on a stable HTTPS origin so browser storage persists consistently for that origin.
-- Browser storage is not a substitute for backup. The UI must communicate this clearly.
+- The application is deployed on one stable private HTTPS origin backed by D1 structured storage and R2 evidence storage.
+- IndexedDB is a recoverable local cache. The first cloud-backed load migrates an existing ledger from the same origin when no cloud ledger exists.
+- Cloud continuity is not a substitute for a portable user-controlled backup. The UI keeps ZIP export and validated restore available.

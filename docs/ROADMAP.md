@@ -1,8 +1,8 @@
 # WorkLedger delivery roadmap
 
-- **Document status:** V1 release record
-- **Roadmap version:** 1.0.0
-- **Last updated:** 2026-09-20
+- **Document status:** V1.1 cloud-continuity release record
+- **Roadmap version:** 1.1.0
+- **Last updated:** 2026-09-21
 
 ## 1. Delivery policy
 
@@ -19,27 +19,28 @@ Status values:
 
 ## 2. Roadmap summary
 
-| Phase | Name                                   | Status    | User-visible milestone                         |
-| ----: | -------------------------------------- | --------- | ---------------------------------------------- |
-|     0 | Product and architecture baseline      | COMPLETE  | Complete implementation contract               |
-|     1 | Repository and quality foundation      | COMPLETE  | Clean runnable application shell baseline      |
-|     2 | Design system and navigation shell     | COMPLETE  | Recognizable responsive WorkLedger UI          |
-|     3 | Domain and persistence foundation      | COMPLETE  | Versioned local database and repositories      |
-|     4 | Profile, clients, projects, and tasks  | COMPLETE  | User can configure billable work               |
-|     5 | Previous work and manual entry         | COMPLETE  | **Milestone 1: existing work can be entered**  |
-|     6 | Live timer                             | COMPLETE  | **Milestone 2: new work can be tracked live**  |
-|     7 | Evidence and proof of work             | COMPLETE  | **Milestone 3: proof can be attached locally** |
-|     8 | Work Log and Timesheet                 | COMPLETE  | Complete review and correction workflow        |
-|     9 | Dashboard                              | COMPLETE  | At-a-glance activity view                      |
-|    10 | Earnings and analytical reports        | COMPLETE  | **Milestone 4: earnings reconcile visibly**    |
-|    11 | Invoice engine                         | COMPLETE  | Draft and issued billing records               |
-|    12 | Invoice PDF                            | COMPLETE  | **Milestone 5: professional invoice download** |
-|    13 | Work Report PDF                        | COMPLETE  | Detailed proof-backed client report            |
-|    14 | Audit history experience               | COMPLETE  | User can inspect material edits                |
-|    15 | Backup and restore                     | COMPLETE  | Complete local continuity workflow             |
-|    16 | Critical end-to-end verification       | COMPLETE* | Core journeys protected                        |
-|    17 | Accessibility, performance, and polish | COMPLETE  | Release-quality interaction and scale          |
-|    18 | Production release                     | COMPLETE  | Private stable deployment and release package  |
+| Phase | Name                                   | Status      | User-visible milestone                           |
+| ----: | -------------------------------------- | ----------- | ------------------------------------------------ |
+|     0 | Product and architecture baseline      | COMPLETE    | Complete implementation contract                 |
+|     1 | Repository and quality foundation      | COMPLETE    | Clean runnable application shell baseline        |
+|     2 | Design system and navigation shell     | COMPLETE    | Recognizable responsive WorkLedger UI            |
+|     3 | Domain and persistence foundation      | COMPLETE    | Versioned local database and repositories        |
+|     4 | Profile, clients, projects, and tasks  | COMPLETE    | User can configure billable work                 |
+|     5 | Previous work and manual entry         | COMPLETE    | **Milestone 1: existing work can be entered**    |
+|     6 | Live timer                             | COMPLETE    | **Milestone 2: new work can be tracked live**    |
+|     7 | Evidence and proof of work             | COMPLETE    | **Milestone 3: proof can be attached privately** |
+|     8 | Work Log and Timesheet                 | COMPLETE    | Complete review and correction workflow          |
+|     9 | Dashboard                              | COMPLETE    | At-a-glance activity view                        |
+|    10 | Earnings and analytical reports        | COMPLETE    | **Milestone 4: earnings reconcile visibly**      |
+|    11 | Invoice engine                         | COMPLETE    | Draft and issued billing records                 |
+|    12 | Invoice PDF                            | COMPLETE    | **Milestone 5: professional invoice download**   |
+|    13 | Work Report PDF                        | COMPLETE    | Detailed proof-backed client report              |
+|    14 | Audit history experience               | COMPLETE    | User can inspect material edits                  |
+|    15 | Backup and restore                     | COMPLETE    | Complete local continuity workflow               |
+|    16 | Critical end-to-end verification       | COMPLETE*   | Core journeys protected                          |
+|    17 | Accessibility, performance, and polish | COMPLETE    | Release-quality interaction and scale            |
+|    18 | Production release                     | COMPLETE    | Private stable deployment and release package    |
+|    19 | Private cloud continuity               | IN PROGRESS | Cross-device records and evidence persistence    |
 
 ## 3. Phase 0 — Product and architecture baseline
 
@@ -614,7 +615,46 @@ Release a private, stable V1 without risking local data continuity.
 - A fresh V1 backup can be exported from the deployed build.
 - User receives the private application URL and release summary.
 
-## 22. Milestone acceptance statements
+## 22. Phase 19 — Private cloud continuity
+
+### Goal
+
+Keep the owner's complete ledger and evidence available after browser restarts,
+browser/device changes, and ordinary redeployments without discarding the fast
+local workflow.
+
+### In scope
+
+- Private Site identity as the storage ownership boundary.
+- D1 migrations and owner-scoped versioned structured snapshots.
+- R2 persistence for original evidence files.
+- Existing same-origin IndexedDB migration on first cloud-backed load.
+- Local pending-write recovery after network failure.
+- Optimistic multi-writer conflict detection with no silent overwrite.
+- Visible synchronization state.
+- Cloud synchronization after validated backup restore.
+- Same stable private production URL.
+
+### Exit criteria
+
+- An empty cloud account receives the complete existing local ledger and all
+  evidence before reporting synchronized state.
+- A later browser/device load hydrates the same records and evidence from cloud.
+- Every application mutation queues and awaits its cloud snapshot attempt.
+- Network failure leaves local records intact and retries after reconnection or
+  reload.
+- Competing stale versions fail without overwriting the accepted cloud version.
+- Evidence download verifies ownership through the current structured snapshot.
+- D1 structured payloads are chunked below the platform row limit.
+- Backup export and atomic restore continue to work.
+- Formatting, linting, type checking, tests, build, private deployment, and live
+  API smoke checks pass.
+
+### Status
+
+`IN PROGRESS` pending private deployment and live persistence verification.
+
+## 23. Milestone acceptance statements
 
 ### Milestone 1 — Historical work operational
 
@@ -640,7 +680,7 @@ Release a private, stable V1 without risking local data continuity.
 
 > I can export everything and restore it safely after validation.
 
-## 23. Global definition of done
+## 24. Global definition of done
 
 Every phase must satisfy `CODEX.md` and additionally show:
 
@@ -652,27 +692,30 @@ Every phase must satisfy `CODEX.md` and additionally show:
 - Passing format, lint, typecheck, tests, and build.
 - Updated phase status only after evidence is available.
 
-## 24. Risk register
+## 25. Risk register
 
-| Risk                               | Impact                     | Planned control                                               |
-| ---------------------------------- | -------------------------- | ------------------------------------------------------------- |
-| Browser data is cleared or evicted | Loss of work/evidence      | Storage warnings, persistent-storage request, backup/restore  |
-| Timer open in multiple tabs        | Duplicate/conflicting time | Web Locks, database invariant, version checks, broadcasts     |
-| System clock changes               | Invalid duration           | Instant validation, anomaly error, audited correction         |
-| DST/midnight boundaries            | Wrong date or duration     | Stored timezone/instants, deterministic partition tests       |
-| Large evidence exhausts quota      | Failed proof save          | Size limits, usage estimate, partial failure, backup guidance |
-| Floating-point math                | Incorrect earnings         | Integer seconds/minor units and `bigint` calculation          |
-| Project/rate changes               | Historical totals drift    | Session and invoice snapshots                                 |
-| Duplicate billing                  | Financial error            | Unique session link and issue-time revalidation               |
-| Schema evolution                   | Existing data breaks       | Versioned migrations and prior-version fixtures               |
-| Invalid backup                     | Corruption on restore      | Full validation and atomic replacement                        |
-| Generated PDFs clip content        | Unprofessional documents   | Representative visual rendering checks                        |
-| Scope growth                       | Delayed, unstable V1       | Phase boundaries and explicit non-goals                       |
+| Risk                               | Impact                      | Planned control                                                |
+| ---------------------------------- | --------------------------- | -------------------------------------------------------------- |
+| Browser data is cleared or evicted | Pending local edits at risk | Visible cloud state, retry queue, and portable backup          |
+| Timer open in multiple tabs        | Duplicate/conflicting time  | Web Locks, database invariant, version checks, broadcasts      |
+| System clock changes               | Invalid duration            | Instant validation, anomaly error, audited correction          |
+| DST/midnight boundaries            | Wrong date or duration      | Stored timezone/instants, deterministic partition tests        |
+| Large evidence exhausts quota      | Failed proof save           | Size limits, usage estimate, partial failure, backup guidance  |
+| Floating-point math                | Incorrect earnings          | Integer seconds/minor units and `bigint` calculation           |
+| Project/rate changes               | Historical totals drift     | Session and invoice snapshots                                  |
+| Duplicate billing                  | Financial error             | Unique session link and issue-time revalidation                |
+| Schema evolution                   | Existing data breaks        | Versioned migrations and prior-version fixtures                |
+| Invalid backup                     | Corruption on restore       | Full validation and atomic replacement                         |
+| Generated PDFs clip content        | Unprofessional documents    | Representative visual rendering checks                         |
+| Scope growth                       | Delayed, unstable V1        | Phase boundaries and explicit non-goals                        |
+| Stale device writes                | Cross-device data loss      | Optimistic cloud version keys; preserve local copy on conflict |
+| Cloud outage                       | Delayed cross-device save   | IndexedDB pending queue, visible status, retry, ZIP backup     |
+| D1 row-size limit                  | Structured sync failure     | Ordered bounded snapshot chunks and UTF-8 length validation    |
 
-## 25. V1 verification record
+## 26. V1 verification record
 
-- Formatting, ESLint, strict TypeScript, unit/integration tests, and the static
-  production build pass as one release gate.
+- Formatting, ESLint, strict TypeScript, 15 unit/integration tests, and the
+  server-backed production build pass as one release gate.
 - Tests cover integer billing, duration formatting, organization edits without
   historical mutation, manual work, timer pause/resume, midnight partitioning,
   invoice issuance and immutability, WebMCP operations, and backup
@@ -681,5 +724,6 @@ Every phase must satisfy `CODEX.md` and additionally show:
   the managed build runtime is unavailable because it exposes no launchable
   Chromium binary; this is an environment-only limitation recorded under
   ADR-021.
-- The production Site remains owner-private and uses one stable origin so its
-  IndexedDB data does not appear to move or disappear.
+- The production Site remains owner-private and uses one stable origin. D1 and
+  R2 provide owner-scoped continuity, while IndexedDB remains a local cache and
+  pending-write safety layer.
