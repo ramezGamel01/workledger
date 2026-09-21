@@ -886,6 +886,84 @@ export const ledgerService = {
     await notifyChange();
   },
 
+  async deleteProject(projectId: string): Promise<void> {
+    const timestamp = nowIso();
+    const operationId = id();
+    await database.transaction(
+      "rw",
+      [
+        database.projects,
+        database.tasks,
+        database.workSessions,
+        database.evidenceAssets,
+        database.invoiceLines,
+        database.auditEvents,
+      ],
+      async () => {
+        const existing = await database.projects.get(projectId);
+        if (!existing) {
+          throw new WorkLedgerError("NOT_FOUND", "Project not found.");
+        }
+        const [session, evidence, invoiceLine] = await Promise.all([
+          database.workSessions.where("projectId").equals(projectId).first(),
+          database.evidenceAssets.where("projectId").equals(projectId).first(),
+          database.invoiceLines
+            .filter((line) => line.projectId === projectId)
+            .first(),
+        ]);
+        if (session || evidence || invoiceLine) {
+          throw new WorkLedgerError(
+            "CONFLICT",
+            "This project has work, evidence, or invoice history. Archive it instead to preserve those records.",
+          );
+        }
+        const tasks = await database.tasks
+          .where("projectId")
+          .equals(projectId)
+          .toArray();
+        if (tasks.length > 0) {
+          await database.tasks.bulkDelete(tasks.map((task) => task.id));
+        }
+        await database.projects.delete(projectId);
+        await database.auditEvents.bulkAdd([
+          ...tasks.map((task) =>
+            audit({
+              entityType: "Task",
+              entityId: task.id,
+              action: "deleted",
+              before: {
+                projectId: task.projectId,
+                name: task.name,
+                status: task.status,
+              },
+              after: null,
+              changedFields: ["record"],
+              reason: "Unused task deleted with its project",
+              operationId,
+              at: timestamp,
+            }),
+          ),
+          audit({
+            entityType: "Project",
+            entityId: projectId,
+            action: "deleted",
+            before: {
+              clientId: existing.clientId,
+              name: existing.name,
+              status: existing.status,
+            },
+            after: null,
+            changedFields: ["record"],
+            reason: "Unused project permanently deleted",
+            operationId,
+            at: timestamp,
+          }),
+        ]);
+      },
+    );
+    await notifyChange();
+  },
+
   async createTask(input: TaskInput): Promise<Task> {
     const project = await database.projects.get(input.projectId);
     if (!project || project.status !== "active") {
@@ -1024,6 +1102,49 @@ export const ledgerService = {
             after: { status: archived ? "archived" : "active" },
             changedFields: ["status"],
             reason: null,
+            at: timestamp,
+          }),
+        );
+      },
+    );
+    await notifyChange();
+  },
+
+  async deleteTask(taskId: string): Promise<void> {
+    const timestamp = nowIso();
+    await database.transaction(
+      "rw",
+      database.tasks,
+      database.workSessions,
+      database.auditEvents,
+      async () => {
+        const existing = await database.tasks.get(taskId);
+        if (!existing) {
+          throw new WorkLedgerError("NOT_FOUND", "Task not found.");
+        }
+        const session = await database.workSessions
+          .filter((item) => item.taskId === taskId)
+          .first();
+        if (session) {
+          throw new WorkLedgerError(
+            "CONFLICT",
+            "This task is used by work sessions. Archive it instead to preserve your history.",
+          );
+        }
+        await database.tasks.delete(taskId);
+        await database.auditEvents.add(
+          audit({
+            entityType: "Task",
+            entityId: taskId,
+            action: "deleted",
+            before: {
+              projectId: existing.projectId,
+              name: existing.name,
+              status: existing.status,
+            },
+            after: null,
+            changedFields: ["record"],
+            reason: "Unused task permanently deleted",
             at: timestamp,
           }),
         );

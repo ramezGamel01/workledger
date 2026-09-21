@@ -1,7 +1,7 @@
 # WorkLedger delivery roadmap
 
 - **Document status:** V1.1 cloud-continuity release record
-- **Roadmap version:** 1.1.0
+- **Roadmap version:** 1.1.1
 - **Last updated:** 2026-09-21
 
 ## 1. Delivery policy
@@ -717,7 +717,7 @@ Every phase must satisfy `CODEX.md` and additionally show:
 
 ## 26. V1 verification record
 
-- Formatting, ESLint, strict TypeScript, 15 unit/integration tests, and the
+- Formatting, ESLint, strict TypeScript, 18 unit/integration tests, and the
   server-backed production build pass as one release gate.
 - Tests cover integer billing, duration formatting, organization edits without
   historical mutation, manual work, timer pause/resume, midnight partitioning,

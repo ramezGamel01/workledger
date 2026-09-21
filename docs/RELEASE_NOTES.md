@@ -1,6 +1,6 @@
-# WorkLedger V1.1 cloud continuity release notes
+# WorkLedger V1.1.1 organization controls release notes
 
-- **Version:** 1.1.0
+- **Version:** 1.1.1
 - **Release date:** 2026-09-21
 - **Database schema:** 1
 - **Cloud schema migrations:** 2
@@ -11,6 +11,10 @@
 
 - Freelancer identity, invoice defaults, payment details, and storage controls.
 - Client, project, and task creation, editing, archive, and restore workflows.
+- Guarded permanent deletion of unused projects and tasks, with confirmation,
+  atomic reference checks, and retained audit events.
+- Canadian dollar (CAD) selection for client defaults, app settings, projects,
+  and invoices.
 - Historical duration, exact-range, and multi-day quick entry.
 - Persistent live timer with pause/resume, reload recovery, cross-tab locking,
   clock checks, and local-midnight partitioning.
@@ -36,7 +40,7 @@
 
 ## Verification
 
-The cloud release passes Prettier, ESLint, strict TypeScript, 15 deterministic
+The cloud release passes Prettier, ESLint, strict TypeScript, 18 deterministic
 unit/integration tests, and a server-backed production build. The repository
 includes a Playwright first-run smoke test. This managed build environment
 exposes no launchable Chromium binary, so that one browser process could not be

@@ -4,7 +4,7 @@ WorkLedger is a private cloud-backed work tracking application for hourly contra
 
 ## Current state
 
-**WorkLedger V1.1 adds private cloud continuity to the complete V1 product.**
+**WorkLedger V1.1.1 adds safer organization controls to the cloud-backed V1 product.**
 
 The application covers the full workflow: freelancer setup,
 clients, projects and tasks, historical entry, a resilient live timer, proof of
@@ -13,7 +13,7 @@ work-report PDFs, read-only audit history, plus validated ZIP backup and atomic
 restore. D1 now persists structured records across devices, R2 persists evidence
 files, and IndexedDB remains the fast local cache and pending-write safety layer.
 
-Formatting, linting, strict type checking, 15 deterministic tests, and the
+Formatting, linting, strict type checking, 18 deterministic tests, and the
 server-backed production build pass. A Chromium smoke specification is
 included; its local execution is unavailable in this managed runtime because
 no launchable browser binary is exposed. This environment limitation does not

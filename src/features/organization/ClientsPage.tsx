@@ -11,6 +11,7 @@ import { useOutletContext } from "react-router-dom";
 
 import { useUiStore } from "@/app/store";
 import { Badge, Button, EmptyState, Field, PageHeader } from "@/components/ui";
+import { SUPPORTED_CURRENCIES } from "@/domain/currencies";
 import type { LedgerSnapshot } from "@/domain/models";
 import { userMessage } from "@/services/errors";
 import { ledgerService } from "@/services/workledger";
@@ -153,12 +154,11 @@ export function ClientsPage(): React.JSX.Element {
                   value={currency}
                   onChange={(event) => setCurrency(event.target.value)}
                 >
-                  <option value="USD">USD — US Dollar</option>
-                  <option value="EUR">EUR — Euro</option>
-                  <option value="GBP">GBP — British Pound</option>
-                  <option value="EGP">EGP — Egyptian Pound</option>
-                  <option value="SAR">SAR — Saudi Riyal</option>
-                  <option value="AED">AED — UAE Dirham</option>
+                  {SUPPORTED_CURRENCIES.map((item) => (
+                    <option key={item.code} value={item.code}>
+                      {item.code} — {item.name}
+                    </option>
+                  ))}
                 </select>
               </Field>
             </div>

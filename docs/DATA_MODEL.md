@@ -1,7 +1,7 @@
 # WorkLedger data model
 
 - **Document status:** Accepted Phase 0 baseline
-- **Model version:** 1.1.0
+- **Model version:** 1.1.1
 - **Last updated:** 2026-09-21
 
 ## 1. Modeling conventions
@@ -205,6 +205,8 @@ type Project = MutableRecord & {
 - If both dates exist, `endDate >= startDate`.
 - Changing the rate, currency, timezone, or name does not rewrite existing session snapshots.
 - Archived projects cannot start a new timer or receive new manual work unless restored first.
+- An unreferenced project may be permanently deleted together with its unused tasks.
+- Work-session, evidence, or invoice-line history blocks permanent deletion.
 
 ## 8. Task
 
@@ -223,6 +225,7 @@ type Task = MutableRecord & {
 - The referenced project exists.
 - Task name is unique after normalization within one project among active tasks.
 - Archived tasks remain resolvable from historical sessions but cannot be selected for new work.
+- An unreferenced task may be permanently deleted; any work-session reference blocks deletion.
 
 ## 9. WorkSession
 
@@ -557,6 +560,7 @@ They are recalculated from canonical records or issued snapshots.
 ### Archiving
 
 - Clients, projects, and tasks are archived rather than deleted once referenced.
+- Unreferenced projects and tasks may be permanently deleted through an audited transaction; deleting an unused project also removes its unused tasks.
 - Archiving hides them from new-work selectors but preserves history.
 - A referenced parent remains readable even if archived.
 
