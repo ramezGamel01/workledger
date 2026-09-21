@@ -43,6 +43,10 @@ exposes no launchable Chromium binary, so that one browser process could not be
 executed locally; the limitation is documented in ADR-021 and does not change
 the deployed application.
 
+The owner-private production deployment completed on the stable Site origin.
+Its live D1 binding contains the expected version and snapshot-chunk tables;
+deployment verification did not seed or alter owner records.
+
 ## Data continuity
 
 WorkLedger now stores structured records in the owner's private D1-backed
