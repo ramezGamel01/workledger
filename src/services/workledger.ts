@@ -35,6 +35,10 @@ import {
   sumClosedSegments,
 } from "@/domain/time";
 import { WorkLedgerError } from "@/services/errors";
+import {
+  initializeCloudPersistence,
+  persistCloudSnapshot,
+} from "@/services/cloud";
 
 export interface ProfileInput {
   displayName: string;
@@ -182,11 +186,13 @@ function audit(input: {
   };
 }
 
-function notifyChange(): void {
-  if (typeof BroadcastChannel === "undefined") return;
-  const channel = new BroadcastChannel("workledger-changes");
-  channel.postMessage({ type: "changed", at: Date.now() });
-  channel.close();
+async function notifyChange(): Promise<void> {
+  if (typeof BroadcastChannel !== "undefined") {
+    const channel = new BroadcastChannel("workledger-changes");
+    channel.postMessage({ type: "changed", at: Date.now() });
+    channel.close();
+  }
+  await persistCloudSnapshot();
 }
 
 async function withTimerLock<T>(operation: () => Promise<T>): Promise<T> {
@@ -264,7 +270,8 @@ export function observeLedgerSnapshot(
 ): () => void {
   let cancelled = false;
   let subscription: { unsubscribe: () => void } | null = null;
-  void ensureDatabaseDefaults()
+  void initializeCloudPersistence()
+    .then(ensureDatabaseDefaults)
     .then(() => {
       if (cancelled) return;
       subscription = liveQuery(getLedgerSnapshot).subscribe({
@@ -365,7 +372,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
   },
 
   async saveSettings(
@@ -432,7 +439,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
   },
 
   async createClient(input: ClientInput): Promise<Client> {
@@ -487,7 +494,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
     return record;
   },
 
@@ -574,7 +581,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
   },
 
   async setClientArchived(clientId: string, archived: boolean): Promise<void> {
@@ -620,7 +627,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
   },
 
   async createProject(input: ProjectInput): Promise<Project> {
@@ -722,7 +729,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
     return record;
   },
 
@@ -832,7 +839,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
   },
 
   async setProjectArchived(
@@ -876,7 +883,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
   },
 
   async createTask(input: TaskInput): Promise<Task> {
@@ -933,7 +940,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
     return record;
   },
 
@@ -990,7 +997,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
   },
 
   async setTaskArchived(taskId: string, archived: boolean): Promise<void> {
@@ -1022,7 +1029,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
   },
 
   async addManualSession(input: ManualSessionInput): Promise<WorkSession> {
@@ -1130,7 +1137,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
     return record;
   },
 
@@ -1213,7 +1220,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
   },
 
   async updateSessionDetails(input: {
@@ -1299,7 +1306,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
   },
 
   async setSessionDeleted(
@@ -1356,7 +1363,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
   },
 
   async startTimer(input: TimerStartInput): Promise<WorkSession> {
@@ -1431,7 +1438,7 @@ export const ledgerService = {
           );
         },
       );
-      notifyChange();
+      await notifyChange();
       return record;
     });
   },
@@ -1580,7 +1587,7 @@ export const ledgerService = {
           }
         },
       );
-      notifyChange();
+      await notifyChange();
     });
   },
 
@@ -1678,7 +1685,7 @@ export const ledgerService = {
           );
         },
       );
-      notifyChange();
+      await notifyChange();
       return activeId;
     });
   },
@@ -1815,7 +1822,7 @@ export const ledgerService = {
           }
         },
       );
-      notifyChange();
+      await notifyChange();
     });
   },
 
@@ -1905,7 +1912,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
     return record;
   },
 
@@ -2002,7 +2009,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
     return record;
   },
 
@@ -2035,7 +2042,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
   },
 
   async createInvoiceDraft(input: InvoiceDraftInput): Promise<Invoice> {
@@ -2155,7 +2162,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
     return invoice;
   },
 
@@ -2198,7 +2205,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
   },
 
   async issueInvoice(
@@ -2446,7 +2453,7 @@ export const ledgerService = {
         );
       },
     );
-    notifyChange();
+    await notifyChange();
     if (!issued) {
       throw new WorkLedgerError(
         "PERSISTENCE_FAILED",

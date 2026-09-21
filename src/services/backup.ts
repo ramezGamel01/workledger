@@ -7,6 +7,7 @@ import type {
   EvidenceAsset,
   LedgerSnapshot,
 } from "@/domain/models";
+import { persistCloudSnapshot } from "@/services/cloud";
 import { WorkLedgerError } from "@/services/errors";
 
 const BACKUP_FORMAT_VERSION = 1;
@@ -367,7 +368,7 @@ export const backupService = {
     checksums["data.json"] = await sha256(dataBytes);
     const manifest: BackupManifest = {
       product: "WorkLedger",
-      productVersion: "1.0.0",
+      productVersion: "1.1.0",
       formatVersion: BACKUP_FORMAT_VERSION,
       databaseSchemaVersion: DATABASE_SCHEMA_VERSION,
       createdAt,
@@ -414,6 +415,7 @@ export const backupService = {
       channel.postMessage({ type: "changed", at: Date.now() });
       channel.close();
     }
+    await persistCloudSnapshot();
   },
 
   async inspectBackup(file: File): Promise<BackupPreview> {
@@ -509,5 +511,6 @@ export const backupService = {
         await database.invoiceSequences.bulkAdd(data.invoiceSequences);
       },
     );
+    await persistCloudSnapshot();
   },
 };

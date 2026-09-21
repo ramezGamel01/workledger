@@ -256,6 +256,16 @@ svg {
   background: #42c38b;
   box-shadow: 0 0 0 4px rgb(66 195 139 / 10%);
 }
+.local-status__dot--connecting,
+.local-status__dot--syncing,
+.local-status__dot--pending {
+  background: #e5a52d;
+  box-shadow: 0 0 0 4px rgb(229 165 45 / 12%);
+}
+.local-status__dot--conflict {
+  background: #d95858;
+  box-shadow: 0 0 0 4px rgb(217 88 88 / 12%);
+}
 .local-status > div {
   display: grid;
   min-width: 0;
@@ -297,6 +307,29 @@ svg {
   color: var(--green-700);
   font-size: 0.78rem;
   font-weight: 650;
+}
+.cloud-sync-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.72rem clamp(1.25rem, 3vw, 2.25rem);
+  border-bottom: 1px solid var(--amber-100);
+  color: var(--amber-700);
+  background: var(--amber-50);
+  font-size: 0.82rem;
+}
+.cloud-sync-banner--conflict {
+  border-bottom-color: var(--red-100);
+  color: var(--red-700);
+  background: var(--red-50);
+}
+.cloud-sync-banner span {
+  flex: 1;
+}
+.cloud-sync-banner a {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.15rem;
 }
 .mobile-header {
   display: none;

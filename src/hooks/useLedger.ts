@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import type { LedgerSnapshot } from "@/domain/models";
+import { subscribeCloudStatus, type CloudSyncStatus } from "@/services/cloud";
 import { observeLedgerSnapshot } from "@/services/workledger";
 
 export interface LedgerState {
@@ -41,4 +42,14 @@ export function useNow(interval = 1000): number {
     return () => window.clearInterval(timer);
   }, [interval]);
   return now;
+}
+
+export function useCloudStatus(): CloudSyncStatus {
+  const [status, setStatus] = useState<CloudSyncStatus>({
+    state: "connecting",
+    message: "Connecting to private cloud storage…",
+    version: 0,
+  });
+  useEffect(() => subscribeCloudStatus(setStatus), []);
+  return status;
 }

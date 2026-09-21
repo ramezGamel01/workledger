@@ -1,8 +1,8 @@
 # WorkLedger data model
 
 - **Document status:** Accepted Phase 0 baseline
-- **Model version:** 0.1.0
-- **Last updated:** 2026-09-20
+- **Model version:** 1.1.0
+- **Last updated:** 2026-09-21
 
 ## 1. Modeling conventions
 
@@ -626,3 +626,22 @@ The backup format is a portable representation, not a raw IndexedDB dump.
 - Unknown optional fields may be retained for forward compatibility; unknown required versions are rejected.
 
 The backup format has its own version separate from the Dexie schema version.
+
+## 22. Cloud persistence representation
+
+The cloud layer does not introduce a second set of business entities. It stores
+a versioned serialization of the same `LedgerSnapshot` used by the local
+application, with evidence blobs removed from structured JSON.
+
+- `ledger_versions` identifies one owner-scoped snapshot version, its chunk
+  count, UTF-8 byte length, account email, and update time.
+- `ledger_snapshot_chunks` stores ordered bounded text chunks keyed by owner,
+  version, and chunk index. The composite key makes competing writes to the
+  same next version conflict rather than overwrite silently.
+- The five most recent structured versions are retained for operational
+  recovery; the latest complete version is authoritative across devices.
+- Binary evidence is stored in R2 at `<authenticated-user-id>/<evidence-id>`.
+- IndexedDB retains the hydrated business records and evidence blobs as the
+  local working cache. It is replaced atomically after a complete cloud load.
+- Evidence metadata and checksum stay in the structured snapshot. Blob bytes
+  never enter D1 JSON, audit events, `localStorage`, or logs.

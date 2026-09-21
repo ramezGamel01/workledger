@@ -1,0 +1,28 @@
+# WorkLedger is a standalone Sites project and cannot inherit monorepo policy.
+minimumReleaseAge: 10080
+minimumReleaseAgeIgnoreMissingTime: false
+trustLockfile: false
+strictDepBuilds: true
+allowBuilds:
+  esbuild: true
+  fsevents: true
+  sharp: true
+  unrs-resolver: true
+  workerd: true
+storeDir: ${SITES_PNPM_SHARED_STORE:-.sites-runtime/pnpm-store}
+cacheDir: ${SITES_PNPM_SHARED_STORE:-.sites-runtime/pnpm-store}/policy-cache
+enableGlobalVirtualStore: false
+packageImportMethod: clone-or-copy
+verifyDepsBeforeRun: false
+optimisticRepeatInstall: false
+overrides:
+  miniflare>sharp: 0.35.4
+minimumReleaseAgeExclude:
+  - "@vitest/mocker@5.0.1"
+  - "@vitest/spy@5.0.1"
+  - jsdom@30.1.0
+  - lucide-react@1.47.0
+  - prettier@3.9.8
+  - react-router-dom@7.18.4
+  - react-router@7.18.4
+  - vitest@5.0.1

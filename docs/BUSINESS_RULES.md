@@ -1,8 +1,8 @@
 # WorkLedger business rules
 
 - **Document status:** Accepted Phase 0 baseline
-- **Rules version:** 0.1.0
-- **Last updated:** 2026-09-20
+- **Rules version:** 1.1.0
+- **Last updated:** 2026-09-21
 
 Rule identifiers are stable references for code, tests, change discussions, and future migrations.
 
@@ -435,7 +435,7 @@ An evidence item is attached either to one session or to one project/date, never
 
 ### WL-EVD-003 — Binary storage
 
-Screenshots and files are stored as `Blob` values in IndexedDB. Base64 content is not stored in `localStorage`, JSON records, audit events, or console logs.
+Screenshots and files are stored in owner-scoped private object storage and cached as `Blob` values in IndexedDB. Base64 content is not stored in `localStorage`, structured JSON, audit events, or console logs.
 
 ### WL-EVD-004 — Allowed screenshots
 
@@ -459,7 +459,7 @@ When supported, the application displays storage usage and quota estimate. It wa
 
 ### WL-EVD-009 — Confidentiality
 
-Evidence remains local. The user must actively select evidence for a report or backup download. Object URLs are temporary and revoked after use.
+Evidence is available only through the authenticated private Site and is scoped to the authenticated owner before upload or download. The user must actively select evidence for a client-facing report or backup download. Object URLs are temporary and revoked after use.
 
 ## 12. Audit rules
 
@@ -607,3 +607,29 @@ Clock range   = none
 ```
 
 These examples become executable tests when their implementation phase begins.
+
+## 17. Cloud continuity rules
+
+### WL-CLD-001 — Authenticated ownership
+
+Every D1 record and R2 key is scoped by the authenticated Site user identifier supplied by the trusted hosting boundary. Client-provided profile identifiers never select another owner's storage.
+
+### WL-CLD-002 — First-load migration
+
+When no cloud ledger exists, the first cloud-backed load uploads the complete existing IndexedDB ledger and all evidence from the same stable origin before marking cloud synchronization complete. Existing local data is never cleared as a migration shortcut.
+
+### WL-CLD-003 — Local working cache
+
+Commands continue to commit their business records and audit events atomically in IndexedDB. After each successful local transaction, WorkLedger uploads new evidence and then a structured snapshot. A failed network write leaves the local result and a durable pending-sync marker intact for retry.
+
+### WL-CLD-004 — Version conflicts
+
+Cloud snapshots use monotonically increasing optimistic versions. Competing writers cannot overwrite the same next version. On a mismatch, WorkLedger preserves the local copy, stops automatic overwrites, and tells the owner to protect the local state with an export before resolving the conflict.
+
+### WL-CLD-005 — Structured and binary separation
+
+Structured records are stored in bounded D1 chunks. Original evidence bytes are stored separately in R2 and must be uploaded successfully before a snapshot that references them is committed.
+
+### WL-CLD-006 — Portable recovery remains available
+
+Cloud synchronization does not remove ZIP backup and restore. A validated restore replaces the local dataset atomically and then synchronizes the complete restored ledger to the current owner's cloud storage.

@@ -9,6 +9,7 @@ export default defineConfig([
   globalIgnores([
     "dist",
     "coverage",
+    ".next",
     "playwright-report",
     "test-results",
     ".sites-runtime",
@@ -27,6 +28,12 @@ export default defineConfig([
         ...globals.browser,
         ...globals.node,
       },
+    },
+  },
+  {
+    files: ["app/layout.tsx"],
+    rules: {
+      "react-refresh/only-export-components": "off",
     },
   },
 ]);

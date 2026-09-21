@@ -86,9 +86,9 @@ export function ProofPage(): React.JSX.Element {
   return (
     <div className="page">
       <PageHeader
-        eyebrow="Local evidence"
+        eyebrow="Private evidence"
         title="Proof of Work"
-        description="Screenshots, files, and links stay beside the work they support—on this device only."
+        description="Screenshots, files, and links stay beside the work they support and sync privately across your devices."
         actions={
           <Button onClick={() => openDialog("add-evidence")}>
             <Plus size={17} /> Add proof
@@ -98,10 +98,10 @@ export function ProofPage(): React.JSX.Element {
       <section className="privacy-banner">
         <ShieldCheck size={21} />
         <div>
-          <strong>Nothing here is uploaded by WorkLedger.</strong>
+          <strong>Evidence is stored in your private WorkLedger cloud.</strong>
           <span>
-            Evidence only leaves this browser when you explicitly download a
-            backup or select it for a report.
+            Access follows your private Site account. Evidence only enters a
+            client-facing report when you explicitly select it.
           </span>
         </div>
       </section>

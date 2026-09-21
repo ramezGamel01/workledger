@@ -1,8 +1,9 @@
-# WorkLedger V1 release notes
+# WorkLedger V1.1 cloud continuity release notes
 
-- **Version:** 1.0.0
-- **Release date:** 2026-09-20
+- **Version:** 1.1.0
+- **Release date:** 2026-09-21
 - **Database schema:** 1
+- **Cloud schema migrations:** 2
 - **Backup format:** 1
 - **Audience:** private, owner-only Site
 
@@ -25,26 +26,37 @@
   replacement restore.
 - Feature-detected WebMCP tools for safe summary, manual-entry, and timer
   operations through the same application services.
+- Owner-scoped D1 persistence for structured records with bounded snapshot
+  chunks and optimistic version conflicts.
+- Owner-scoped R2 persistence for screenshots and evidence files.
+- Automatic first-load migration from the existing production-origin
+  IndexedDB ledger when the cloud ledger is empty.
+- Visible synchronized, pending, and conflict states with reconnect/reload
+  retry behavior.
 
 ## Verification
 
-The release passes Prettier, ESLint, strict TypeScript, 13 deterministic
-unit/integration tests, and a production build. The repository includes a
-Playwright first-run smoke test. This managed build environment exposes no
-launchable Chromium binary, so that one browser process could not be executed
-locally; the limitation is documented in ADR-021 and does not change the
-deployed static application.
+The cloud release passes Prettier, ESLint, strict TypeScript, 15 deterministic
+unit/integration tests, and a server-backed production build. The repository
+includes a Playwright first-run smoke test. This managed build environment
+exposes no launchable Chromium binary, so that one browser process could not be
+executed locally; the limitation is documented in ADR-021 and does not change
+the deployed application.
 
 ## Data continuity
 
-WorkLedger is local-first. Records and evidence are stored in IndexedDB for the
-production origin and are not synchronized to another device. Export a complete
-backup from Settings before clearing browser storage, changing devices, or
-moving to another origin. Restore always validates the archive before replacing
-the current dataset.
+WorkLedger now stores structured records in the owner's private D1-backed
+ledger, original evidence in owner-scoped R2 storage, and a hydrated copy in
+IndexedDB. Normal close/reopen and same-account device changes load the latest
+complete cloud version. Pending network writes remain on the originating device
+and retry; version conflicts never overwrite silently. Export a complete backup
+from Settings as a separate portable recovery copy. Restore always validates the
+archive before replacing and resynchronizing the current dataset.
 
 ## Upgrade notes
 
-This is the first production schema and backup format. No data migration is
-required. Future releases must preserve schema migrations and declare any
-backup-format compatibility change here.
+The local Dexie schema and backup format remain version 1. Cloud migrations add
+version and chunk tables without clearing IndexedDB. The first cloud-backed load
+automatically uploads existing same-origin data only when no owner cloud ledger
+exists. Future releases must preserve both local and cloud migrations and
+declare any backup-format compatibility change here.
