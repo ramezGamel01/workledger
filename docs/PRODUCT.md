@@ -1,7 +1,7 @@
 # WorkLedger product specification
 
 - **Document status:** Accepted cloud-continuity release
-- **Baseline version:** 1.1.0
+- **Baseline version:** 1.1.1
 - **Last updated:** 2026-09-21
 - **Product type:** Private single-user cloud-backed web application with a local cache
 
@@ -63,8 +63,11 @@ Export backup
 - Multiple clients.
 - Multiple projects per client.
 - Project-specific currency and hourly rate.
+- Canadian dollar (CAD) support across defaults, projects, and invoices.
 - Optional reusable tasks within a project.
 - Active and archived project states.
+- Permanent deletion for unused projects and tasks; referenced records remain
+  archive-only so historical work is preserved.
 
 ### 5.2 Time capture
 

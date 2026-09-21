@@ -1,7 +1,7 @@
 # WorkLedger business rules
 
 - **Document status:** Accepted Phase 0 baseline
-- **Rules version:** 1.1.0
+- **Rules version:** 1.1.1
 - **Last updated:** 2026-09-21
 
 Rule identifiers are stable references for code, tests, change discussions, and future migrations.
@@ -62,6 +62,15 @@ A new session copies the project's current timezone. Later timezone changes do n
 ### WL-ORG-006 — Project date boundaries
 
 Project start and end dates are planning metadata, not destructive billing barriers. New or historical work outside those dates requires a visible warning and explicit confirmation, but remains allowed while the client and project are active.
+
+### WL-ORG-007 — Permanent deletion before use
+
+An unreferenced task may be permanently deleted. An unreferenced project may
+be permanently deleted together with its unused tasks. Any work-session
+reference blocks task deletion; any work-session, evidence, or invoice-line
+reference blocks project deletion. Referenced projects and tasks must be
+archived instead. The reference check, deletion, and append-only audit events
+are one atomic transaction.
 
 ## 3. Live timer state rules
 

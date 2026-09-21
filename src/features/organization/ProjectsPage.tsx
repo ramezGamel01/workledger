@@ -7,11 +7,13 @@ import {
   Pencil,
   Plus,
   RotateCcw,
+  Trash2,
 } from "lucide-react";
 import { Link, useOutletContext } from "react-router-dom";
 
 import { useUiStore } from "@/app/store";
 import { Badge, Button, EmptyState, Field, PageHeader } from "@/components/ui";
+import { SUPPORTED_CURRENCIES } from "@/domain/currencies";
 import { formatMoney, minorToMoney, moneyToMinor } from "@/domain/format";
 import type { LedgerSnapshot } from "@/domain/models";
 import { userMessage } from "@/services/errors";
@@ -159,6 +161,36 @@ export function ProjectsPage(): React.JSX.Element {
     }
   };
 
+  const deleteTask = async (taskId: string) => {
+    const task = snapshot.tasks.find((item) => item.id === taskId);
+    if (!task) return;
+    if (snapshot.sessions.some((session) => session.taskId === taskId)) {
+      setError(
+        "This task is used by work sessions. Archive it instead to preserve your history.",
+      );
+      return;
+    }
+    if (
+      !window.confirm(
+        `Permanently delete “${task.name}”? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setError(null);
+    try {
+      await ledgerService.deleteTask(taskId);
+      if (editingTaskId === taskId) {
+        setTaskName("");
+        setTaskProjectId("");
+        setEditingTaskId(null);
+      }
+      pushToast("success", "Task permanently deleted.");
+    } catch (caught) {
+      setError(userMessage(caught));
+    }
+  };
+
   const archiveProject = async (id: string, archived: boolean) => {
     setError(null);
     try {
@@ -167,6 +199,48 @@ export function ProjectsPage(): React.JSX.Element {
         "success",
         archived ? "Project archived." : "Project restored.",
       );
+    } catch (caught) {
+      setError(userMessage(caught));
+    }
+  };
+
+  const deleteProject = async (projectId: string) => {
+    const project = snapshot.projects.find((item) => item.id === projectId);
+    if (!project) return;
+    const hasHistory =
+      snapshot.sessions.some((session) => session.projectId === projectId) ||
+      snapshot.evidence.some((asset) => asset.projectId === projectId) ||
+      snapshot.invoiceLines.some((line) => line.projectId === projectId);
+    if (hasHistory) {
+      setError(
+        "This project has work, evidence, or invoice history. Archive it instead to preserve those records.",
+      );
+      return;
+    }
+    const taskCount = snapshot.tasks.filter(
+      (task) => task.projectId === projectId,
+    ).length;
+    const taskNote =
+      taskCount === 0
+        ? ""
+        : ` and ${taskCount} unused task${taskCount === 1 ? "" : "s"}`;
+    if (
+      !window.confirm(
+        `Permanently delete “${project.name}”${taskNote}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setError(null);
+    try {
+      await ledgerService.deleteProject(projectId);
+      if (editingProjectId === projectId) resetProjectForm();
+      if (taskProjectId === projectId) {
+        setTaskName("");
+        setTaskProjectId("");
+        setEditingTaskId(null);
+      }
+      pushToast("success", "Project permanently deleted.");
     } catch (caught) {
       setError(userMessage(caught));
     }
@@ -243,12 +317,11 @@ export function ProjectsPage(): React.JSX.Element {
                   value={currency}
                   onChange={(event) => setCurrency(event.target.value)}
                 >
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <option value="EGP">EGP</option>
-                  <option value="SAR">SAR</option>
-                  <option value="AED">AED</option>
+                  {SUPPORTED_CURRENCIES.map((item) => (
+                    <option key={item.code} value={item.code}>
+                      {item.code}
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field
@@ -403,6 +476,15 @@ export function ProjectsPage(): React.JSX.Element {
                               <RotateCcw size={14} />
                             </button>
                           )}
+                          <button
+                            type="button"
+                            className="icon-button icon-button--small icon-button--danger"
+                            aria-label={`Delete ${task.name} permanently`}
+                            title="Permanently delete unused task"
+                            onClick={() => void deleteTask(task.id)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </div>
                     ))
@@ -452,6 +534,13 @@ export function ProjectsPage(): React.JSX.Element {
                       <RotateCcw size={15} /> Restore project
                     </Button>
                   )}
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => void deleteProject(project.id)}
+                  >
+                    <Trash2 size={15} /> Delete project
+                  </Button>
                 </footer>
               </article>
             );

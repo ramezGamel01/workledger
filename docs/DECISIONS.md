@@ -1,7 +1,7 @@
 # WorkLedger architectural decisions
 
 - **Document status:** Accepted V1 decisions
-- **Decision log version:** 1.1.0
+- **Decision log version:** 1.1.1
 - **Last updated:** 2026-09-21
 
 Each decision is binding until a later accepted decision explicitly supersedes it. A code change must not silently rewrite an accepted decision.
@@ -506,6 +506,33 @@ local-only binary authority, ADR-016's no-authentication runtime assumption,
 ADR-018's static deployment decision, and ADR-019's prohibition on evidence
 upload. The no-analytics and no-telemetry portion of ADR-019 remains binding
 through this decision.
+
+## ADR-024 — Allow guarded deletion of unused projects and tasks
+
+- **Status:** Accepted
+- **Date:** 2026-09-21
+
+### Context
+
+The owner needs to remove projects and task labels created by mistake. Archive
+alone leaves unused records in the organization view, while unrestricted hard
+deletion could break work, evidence, invoice, and audit history.
+
+### Decision
+
+Allow permanent deletion only before a project or task is referenced. A task
+with any work-session reference is archive-only. A project with any work
+session, evidence asset, or invoice line is archive-only. Deleting an unused
+project atomically deletes its unused tasks. Every deletion appends audit events
+in the same transaction, and the UI requires explicit confirmation.
+
+### Consequences
+
+- Mistaken unused organization records can be removed cleanly.
+- Historical work and billing references remain intact and readable.
+- Cloud synchronization propagates the deletion and retained audit trail as one
+  snapshot change.
+- No local or cloud schema migration is required.
 
 ## Decision change process
 

@@ -1,4 +1,5 @@
 import { database } from "@/db/database";
+import { SUPPORTED_CURRENCIES } from "@/domain/currencies";
 import { ledgerService } from "@/services/workledger";
 
 async function seedOrganization(): Promise<{
@@ -144,6 +145,96 @@ describe("WorkLedger application service", () => {
         (event) => event.action === "updated",
       ),
     ).toHaveLength(3);
+  });
+
+  it("offers Canadian dollars as a supported organization currency", async () => {
+    expect(SUPPORTED_CURRENCIES.map((item) => item.code)).toContain("CAD");
+    const client = await ledgerService.createClient({
+      displayName: "Maple Studio",
+      legalName: "",
+      companyName: "",
+      email: "",
+      phone: "",
+      defaultCurrency: "CAD",
+      invoiceNotes: "",
+    });
+    const project = await ledgerService.createProject({
+      clientId: client.id,
+      name: "Canadian delivery",
+      description: "",
+      hourlyRateMinor: 7_000,
+      currency: "CAD",
+      timeZone: "America/Toronto",
+      colorToken: "blue",
+      startDate: "",
+      endDate: "",
+    });
+    expect(client.defaultCurrency).toBe("CAD");
+    expect(project.currency).toBe("CAD");
+  });
+
+  it("permanently deletes unused tasks and projects with an audit trail", async () => {
+    const { projectId } = await seedOrganization();
+    const removedTask = await ledgerService.createTask({
+      projectId,
+      name: "Wrong task",
+      description: "",
+    });
+    const cascadedTask = await ledgerService.createTask({
+      projectId,
+      name: "Unused task",
+      description: "",
+    });
+
+    await ledgerService.deleteTask(removedTask.id);
+    expect(await database.tasks.get(removedTask.id)).toBeUndefined();
+
+    await ledgerService.deleteProject(projectId);
+    expect(await database.projects.get(projectId)).toBeUndefined();
+    expect(await database.tasks.get(cascadedTask.id)).toBeUndefined();
+    const deletedEvents = (await database.auditEvents.toArray()).filter(
+      (event) => event.action === "deleted",
+    );
+    expect(
+      deletedEvents.map((event) => [event.entityType, event.entityId]),
+    ).toEqual(
+      expect.arrayContaining([
+        ["Task", removedTask.id],
+        ["Task", cascadedTask.id],
+        ["Project", projectId],
+      ]),
+    );
+  });
+
+  it("requires archive when a task or project has work history", async () => {
+    const { projectId } = await seedOrganization();
+    const task = await ledgerService.createTask({
+      projectId,
+      name: "Delivery",
+      description: "",
+    });
+    await ledgerService.addManualSession({
+      projectId,
+      taskId: task.id,
+      workDate: "2026-09-20",
+      mode: "duration",
+      startTime: "",
+      endTime: "",
+      breakMinutes: 0,
+      hours: 1,
+      minutes: 0,
+      description: "Referenced work",
+      billable: true,
+      hourlyRateMinorOverride: null,
+      incomplete: false,
+    });
+
+    await expect(ledgerService.deleteTask(task.id)).rejects.toThrow(/archive/i);
+    await expect(ledgerService.deleteProject(projectId)).rejects.toThrow(
+      /archive/i,
+    );
+    expect(await database.tasks.get(task.id)).toBeDefined();
+    expect(await database.projects.get(projectId)).toBeDefined();
   });
 
   it("persists pause and resume segments and excludes the paused interval", async () => {

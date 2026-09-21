@@ -368,7 +368,7 @@ export const backupService = {
     checksums["data.json"] = await sha256(dataBytes);
     const manifest: BackupManifest = {
       product: "WorkLedger",
-      productVersion: "1.1.0",
+      productVersion: "1.1.1",
       formatVersion: BACKUP_FORMAT_VERSION,
       databaseSchemaVersion: DATABASE_SCHEMA_VERSION,
       createdAt,

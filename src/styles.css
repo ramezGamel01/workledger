@@ -445,6 +445,9 @@ svg {
   color: #fff;
   background: var(--red-700);
 }
+.button--danger:not(:disabled):hover {
+  background: #932929;
+}
 .icon-button {
   display: grid;
   width: 2.5rem;
@@ -467,6 +470,14 @@ svg {
   border-color: var(--ink-200);
   color: var(--ink-600);
   background: #fff;
+}
+.icon-button--danger {
+  border-color: var(--red-100);
+  color: var(--red-700);
+  background: var(--red-50);
+}
+.icon-button--danger:not(:disabled):hover {
+  border-color: var(--red-700);
 }
 .badge {
   display: inline-flex;
@@ -1679,6 +1690,7 @@ input[type="checkbox"] {
 }
 .project-card__footer {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.35rem;
   padding: 0.65rem 0.85rem;

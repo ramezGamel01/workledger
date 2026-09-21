@@ -15,6 +15,7 @@ import { useOutletContext } from "react-router-dom";
 
 import { useUiStore } from "@/app/store";
 import { Badge, Button, Field, PageHeader } from "@/components/ui";
+import { SUPPORTED_CURRENCIES } from "@/domain/currencies";
 import type { LedgerSnapshot } from "@/domain/models";
 import { useCloudStatus } from "@/hooks/useLedger";
 import { backupService, type BackupPreview } from "@/services/backup";
@@ -409,12 +410,11 @@ export function SettingsPage(): React.JSX.Element {
                 value={currency}
                 onChange={(event) => setCurrency(event.target.value)}
               >
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-                <option value="EGP">EGP</option>
-                <option value="SAR">SAR</option>
-                <option value="AED">AED</option>
+                {SUPPORTED_CURRENCIES.map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {item.code}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field label="Week starts on">
