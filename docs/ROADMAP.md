@@ -19,28 +19,28 @@ Status values:
 
 ## 2. Roadmap summary
 
-| Phase | Name                                   | Status      | User-visible milestone                           |
-| ----: | -------------------------------------- | ----------- | ------------------------------------------------ |
-|     0 | Product and architecture baseline      | COMPLETE    | Complete implementation contract                 |
-|     1 | Repository and quality foundation      | COMPLETE    | Clean runnable application shell baseline        |
-|     2 | Design system and navigation shell     | COMPLETE    | Recognizable responsive WorkLedger UI            |
-|     3 | Domain and persistence foundation      | COMPLETE    | Versioned local database and repositories        |
-|     4 | Profile, clients, projects, and tasks  | COMPLETE    | User can configure billable work                 |
-|     5 | Previous work and manual entry         | COMPLETE    | **Milestone 1: existing work can be entered**    |
-|     6 | Live timer                             | COMPLETE    | **Milestone 2: new work can be tracked live**    |
-|     7 | Evidence and proof of work             | COMPLETE    | **Milestone 3: proof can be attached privately** |
-|     8 | Work Log and Timesheet                 | COMPLETE    | Complete review and correction workflow          |
-|     9 | Dashboard                              | COMPLETE    | At-a-glance activity view                        |
-|    10 | Earnings and analytical reports        | COMPLETE    | **Milestone 4: earnings reconcile visibly**      |
-|    11 | Invoice engine                         | COMPLETE    | Draft and issued billing records                 |
-|    12 | Invoice PDF                            | COMPLETE    | **Milestone 5: professional invoice download**   |
-|    13 | Work Report PDF                        | COMPLETE    | Detailed proof-backed client report              |
-|    14 | Audit history experience               | COMPLETE    | User can inspect material edits                  |
-|    15 | Backup and restore                     | COMPLETE    | Complete local continuity workflow               |
-|    16 | Critical end-to-end verification       | COMPLETE*   | Core journeys protected                          |
-|    17 | Accessibility, performance, and polish | COMPLETE    | Release-quality interaction and scale            |
-|    18 | Production release                     | COMPLETE    | Private stable deployment and release package    |
-|    19 | Private cloud continuity               | IN PROGRESS | Cross-device records and evidence persistence    |
+| Phase | Name                                   | Status    | User-visible milestone                           |
+| ----: | -------------------------------------- | --------- | ------------------------------------------------ |
+|     0 | Product and architecture baseline      | COMPLETE  | Complete implementation contract                 |
+|     1 | Repository and quality foundation      | COMPLETE  | Clean runnable application shell baseline        |
+|     2 | Design system and navigation shell     | COMPLETE  | Recognizable responsive WorkLedger UI            |
+|     3 | Domain and persistence foundation      | COMPLETE  | Versioned local database and repositories        |
+|     4 | Profile, clients, projects, and tasks  | COMPLETE  | User can configure billable work                 |
+|     5 | Previous work and manual entry         | COMPLETE  | **Milestone 1: existing work can be entered**    |
+|     6 | Live timer                             | COMPLETE  | **Milestone 2: new work can be tracked live**    |
+|     7 | Evidence and proof of work             | COMPLETE  | **Milestone 3: proof can be attached privately** |
+|     8 | Work Log and Timesheet                 | COMPLETE  | Complete review and correction workflow          |
+|     9 | Dashboard                              | COMPLETE  | At-a-glance activity view                        |
+|    10 | Earnings and analytical reports        | COMPLETE  | **Milestone 4: earnings reconcile visibly**      |
+|    11 | Invoice engine                         | COMPLETE  | Draft and issued billing records                 |
+|    12 | Invoice PDF                            | COMPLETE  | **Milestone 5: professional invoice download**   |
+|    13 | Work Report PDF                        | COMPLETE  | Detailed proof-backed client report              |
+|    14 | Audit history experience               | COMPLETE  | User can inspect material edits                  |
+|    15 | Backup and restore                     | COMPLETE  | Complete local continuity workflow               |
+|    16 | Critical end-to-end verification       | COMPLETE* | Core journeys protected                          |
+|    17 | Accessibility, performance, and polish | COMPLETE  | Release-quality interaction and scale            |
+|    18 | Production release                     | COMPLETE  | Private stable deployment and release package    |
+|    19 | Private cloud continuity               | COMPLETE  | Cross-device records and evidence persistence    |
 
 ## 3. Phase 0 — Product and architecture baseline
 
@@ -652,7 +652,10 @@ local workflow.
 
 ### Status
 
-`IN PROGRESS` pending private deployment and live persistence verification.
+`COMPLETE`. The owner-private server-backed version is deployed on the stable
+production origin. The live D1 binding contains the version and snapshot-chunk
+tables, and the deployment includes the R2 evidence binding. Existing browser
+data migrates on the owner's first load from the browser that holds that data.
 
 ## 23. Milestone acceptance statements
 
@@ -727,3 +730,6 @@ Every phase must satisfy `CODEX.md` and additionally show:
 - The production Site remains owner-private and uses one stable origin. D1 and
   R2 provide owner-scoped continuity, while IndexedDB remains a local cache and
   pending-write safety layer.
+- The server-backed production version deployed successfully, and its live D1
+  binding exposes the expected version and snapshot-chunk tables. Production
+  data was not seeded or modified during deployment verification.
