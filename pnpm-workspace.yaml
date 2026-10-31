@@ -16,7 +16,17 @@ packageImportMethod: clone-or-copy
 verifyDepsBeforeRun: false
 optimisticRepeatInstall: false
 overrides:
-  miniflare>sharp: 0.35.4
+  miniflare>sharp: 0.35.5
+  # Patched versions of packages pulled in by the tooling, for security advisories
+  "undici@>=7.0.0 <7.30.1": ^7.30.1
+  "undici@>=8.0.0 <8.12.2": ^8.12.2
+  "ws@>=8.0.0 <8.21.0": 8.22.0
+  "image-size@<2.0.3": ^2.0.4
+  "brace-expansion@<1.1.21": ^1.1.21
+  "brace-expansion@>=4.0.0 <5.0.12": ^5.0.12
+  "source-map-js@<1.2.2": ^1.2.2
+  "fast-uri@>=3.0.0 <3.1.9": ^3.1.9
+  "vite@>=8.0.0 <8.1.6": ^8.3.5
 minimumReleaseAgeExclude:
   - "@vitest/mocker@5.0.1"
   - "@vitest/spy@5.0.1"
