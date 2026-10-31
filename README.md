@@ -4,7 +4,7 @@
 
 WorkLedger is a private cloud-backed work tracking application for hourly contractors. It records live and historical work, keeps proof of work beside the time it supports, calculates earnings, and produces professional invoices and work-activity reports.
 
-**[Try the live demo](https://ramezgamel01.github.io/workledger/)** with sample data (nothing leaves your browser) · [Read the case study](https://ramezgamel01.github.io/case-workledger.html)
+**[Try the live demo](https://ramezgamel01.github.io/workledger/)** with sample data (nothing leaves your browser) · [Read the case study](https://ramezgamel.vercel.app/case-workledger.html)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-dark.jpg">
