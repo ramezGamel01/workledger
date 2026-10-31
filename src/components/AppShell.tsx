@@ -9,11 +9,14 @@ import {
   FileCheck2,
   Gauge,
   Menu,
+  Moon,
   PanelLeftClose,
   Plus,
   ReceiptText,
+  RotateCcw,
   Settings2,
   ShieldCheck,
+  Sun,
   TimerReset,
   WalletCards,
   X,
@@ -28,6 +31,10 @@ import type { LedgerSnapshot } from "@/domain/models";
 import type { CloudSyncStatus } from "@/services/cloud";
 import { useCloudStatus, useLedger, useNow } from "@/hooks/useLedger";
 import { useWebMcp } from "@/hooks/useWebMcp";
+import { applyStoredTheme, useTheme } from "@/hooks/useTheme";
+import { isDemo } from "@/demo/mode";
+
+applyStoredTheme();
 
 const navGroups = [
   {
@@ -101,7 +108,7 @@ function Sidebar({
           <div className="brand-mark">WL</div>
           <div>
             <strong>WorkLedger</strong>
-            <span>Private cloud ledger</span>
+            <span>{isDemo ? "Demo workspace" : "Private cloud ledger"}</span>
           </div>
           <button
             type="button"
@@ -130,7 +137,6 @@ function Sidebar({
                   >
                     <Icon size={18} strokeWidth={1.8} />
                     <span>{link.label}</span>
-                    <ChevronRight size={15} className="nav-link__arrow" />
                   </NavLink>
                 );
               })}
@@ -147,7 +153,6 @@ function Sidebar({
           >
             <Settings2 size={18} strokeWidth={1.8} />
             <span>Settings</span>
-            <ChevronRight size={15} className="nav-link__arrow" />
           </NavLink>
           <div className="local-status" title={cloudStatus.message}>
             <span
@@ -155,19 +160,23 @@ function Sidebar({
             />
             <div>
               <strong>
-                {cloudStatus.state === "synced"
-                  ? "Saved to private cloud"
-                  : cloudStatus.state === "connecting" ||
-                      cloudStatus.state === "syncing"
-                    ? "Cloud sync in progress"
-                    : cloudStatus.state === "conflict"
-                      ? "Sync needs attention"
-                      : "Cloud sync queued"}
+                {isDemo
+                  ? "Demo data"
+                  : cloudStatus.state === "synced"
+                    ? "Saved to private cloud"
+                    : cloudStatus.state === "connecting" ||
+                        cloudStatus.state === "syncing"
+                      ? "Cloud sync in progress"
+                      : cloudStatus.state === "conflict"
+                        ? "Sync needs attention"
+                        : "Cloud sync queued"}
               </strong>
               <span>
-                {snapshot.profile
-                  ? snapshot.profile.displayName
-                  : "Setup required"}
+                {isDemo
+                  ? "Saved only in this browser"
+                  : snapshot.profile
+                    ? snapshot.profile.displayName
+                    : "Setup required"}
               </span>
             </div>
             <span className="sr-only" aria-live="polite">
@@ -217,6 +226,7 @@ export function AppShell(): React.JSX.Element {
   const { snapshot, loading, error } = useLedger();
   const cloudStatus = useCloudStatus();
   useWebMcp();
+  const { theme, toggleTheme } = useTheme();
   const setOpen = useUiStore((state) => state.setSidebarOpen);
   const openDialog = useUiStore((state) => state.openDialog);
   if (loading) return <LoadingScreen />;
@@ -251,6 +261,19 @@ export function AppShell(): React.JSX.Element {
           </div>
           <button
             type="button"
+            className="icon-button"
+            aria-label={
+              theme === "dark"
+                ? "Switch to light theme"
+                : "Switch to dark theme"
+            }
+            title={theme === "dark" ? "Light theme" : "Dark theme"}
+            onClick={toggleTheme}
+          >
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          <button
+            type="button"
             className="icon-button icon-button--accent"
             aria-label="Add previous work"
             onClick={() => openDialog("previous-work")}
@@ -261,18 +284,55 @@ export function AppShell(): React.JSX.Element {
         <div className="desktop-commandbar">
           <div className="privacy-pill">
             <ShieldCheck size={16} />
-            <span>Private · cloud-backed</span>
+            <span>{isDemo ? "Demo workspace" : "Private · cloud-backed"}</span>
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => openDialog("previous-work")}
-          >
-            <Plus size={16} />
-            Add previous work
-          </Button>
+          <div className="desktop-commandbar__actions">
+            <button
+              type="button"
+              className="icon-button"
+              aria-label={
+                theme === "dark"
+                  ? "Switch to light theme"
+                  : "Switch to dark theme"
+              }
+              title={theme === "dark" ? "Light theme" : "Dark theme"}
+              onClick={toggleTheme}
+            >
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => openDialog("previous-work")}
+            >
+              <Plus size={16} />
+              Add previous work
+            </Button>
+          </div>
         </div>
-        {cloudStatus.state === "pending" || cloudStatus.state === "conflict" ? (
+        {isDemo ? (
+          <div className="demo-banner" role="note">
+            <span>
+              <strong>You're trying a demo.</strong> The data is made up and
+              every change stays in this browser.
+            </span>
+            <button
+              type="button"
+              className="demo-banner__reset"
+              onClick={() =>
+                void import("@/demo/seed").then((demo) =>
+                  demo.resetDemoLedger(),
+                )
+              }
+            >
+              <RotateCcw size={15} />
+              Reset demo
+            </button>
+          </div>
+        ) : null}
+        {!isDemo &&
+        (cloudStatus.state === "pending" ||
+          cloudStatus.state === "conflict") ? (
           <div
             className={`cloud-sync-banner cloud-sync-banner--${cloudStatus.state}`}
             role={cloudStatus.state === "conflict" ? "alert" : "status"}

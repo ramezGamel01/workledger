@@ -109,7 +109,7 @@ export function ProjectsPage(): React.JSX.Element {
         "success",
         updated
           ? "Project updated; historical work remains unchanged."
-          : "Project created with its billing snapshot rules.",
+          : "Project created.",
       );
     } catch (caught) {
       setError(userMessage(caught));
@@ -272,7 +272,10 @@ export function ProjectsPage(): React.JSX.Element {
           <header className="panel__header">
             <div>
               <h2>{editingProjectId ? "Edit project" : "Create project"}</h2>
-              <p>The rate and timezone become historical snapshots on work.</p>
+              <p>
+                Work keeps the rate and time zone it was recorded with, even if
+                you change them later.
+              </p>
             </div>
           </header>
           <form onSubmit={submit} className="stack-lg">

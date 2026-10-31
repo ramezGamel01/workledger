@@ -30,6 +30,7 @@ import {
   todayIn,
 } from "@/domain/format";
 import type { LedgerSnapshot } from "@/domain/models";
+import { isDemo } from "@/demo/mode";
 
 export function DashboardPage(): React.JSX.Element {
   const snapshot = useOutletContext<LedgerSnapshot>();
@@ -99,7 +100,7 @@ export function DashboardPage(): React.JSX.Element {
       <PageHeader
         eyebrow={format(todayDate, "EEEE, MMMM d")}
         title={`Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}${snapshot.profile ? `, ${snapshot.profile.displayName.split(" ")[0]}` : ""}.`}
-        description="Your time, proof, and earnings—reconciled from one ledger."
+        description="Your time, proof of work and earnings in one place."
         actions={
           <>
             <Button
@@ -140,7 +141,7 @@ export function DashboardPage(): React.JSX.Element {
         </section>
       ) : null}
 
-      {setupComplete && visible.length > 0 && !hasExportedBackup ? (
+      {setupComplete && visible.length > 0 && !hasExportedBackup && !isDemo ? (
         <section className="inline-alert inline-alert--warning dashboard-backup-nudge">
           <HardDriveDownload size={20} />
           <div>
@@ -231,34 +232,24 @@ export function DashboardPage(): React.JSX.Element {
                 data={chartData}
                 margin={{ top: 10, right: 8, left: -22, bottom: 0 }}
               >
-                <CartesianGrid
-                  stroke="#e5eaf2"
-                  strokeDasharray="4 4"
-                  vertical={false}
-                />
+                <CartesianGrid strokeDasharray="4 4" vertical={false} />
                 <XAxis
                   dataKey="day"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#718096", fontSize: 12 }}
+                  tick={{ fontSize: 12 }}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#718096", fontSize: 11 }}
+                  tick={{ fontSize: 11 }}
                 />
                 <Tooltip
-                  cursor={{ fill: "#f1f5fb" }}
-                  contentStyle={{
-                    border: "1px solid #dce3ee",
-                    borderRadius: 10,
-                    boxShadow: "0 12px 30px rgba(16,25,42,.1)",
-                  }}
                   formatter={(value) => [`${String(value)}h`, "Hours"]}
                 />
                 <Bar
                   dataKey="hours"
-                  fill="#3b66dc"
+                  className="chart-bar"
                   radius={[5, 5, 2, 2]}
                   maxBarSize={32}
                 />

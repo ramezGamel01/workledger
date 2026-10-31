@@ -31,8 +31,8 @@ export function SessionRow({
     session.source === "tracked"
       ? "Tracked"
       : session.source === "manual_range"
-        ? "Manual range"
-        : "Manual duration";
+        ? "Added manually"
+        : "Added as hours";
   const range =
     session.startedAt && session.endedAt
       ? `${new Intl.DateTimeFormat(snapshot.settings.locale, {

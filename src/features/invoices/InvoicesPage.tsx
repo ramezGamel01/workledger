@@ -172,7 +172,7 @@ export function InvoicesPage(): React.JSX.Element {
       <PageHeader
         eyebrow="Billing"
         title="Invoices"
-        description="Select eligible work, issue an immutable snapshot, and regenerate its PDF at any time."
+        description="Turn finished work into invoices. Once issued, an invoice is locked, so its numbers never change."
         actions={
           <Button
             disabled={!snapshot.profile || activeClients.length === 0}
@@ -323,7 +323,7 @@ export function InvoicesPage(): React.JSX.Element {
               </div>
             ) : (
               <EmptyState
-                title="No eligible sessions"
+                title="No work ready to invoice"
                 description="Incomplete, non-billable, deleted, out-of-period, or already allocated sessions are excluded."
               />
             )}
@@ -365,7 +365,7 @@ export function InvoicesPage(): React.JSX.Element {
           <div className="section-heading">
             <div>
               <h2>Drafts</h2>
-              <p>Editable selections without final numbers</p>
+              <p>Not issued yet, so you can still change them</p>
             </div>
             <Badge tone="amber">{drafts.length}</Badge>
           </div>
@@ -433,7 +433,7 @@ export function InvoicesPage(): React.JSX.Element {
           ) : (
             <EmptyState
               title="No invoice drafts"
-              description="Create a draft by selecting eligible work sessions above."
+              description="Pick finished work above to start a draft."
             />
           )}
         </div>
@@ -441,7 +441,7 @@ export function InvoicesPage(): React.JSX.Element {
           <div className="section-heading">
             <div>
               <h2>Issued</h2>
-              <p>Permanent billing snapshots</p>
+              <p>Locked and ready to send</p>
             </div>
             <Badge tone="green">{issued.length}</Badge>
           </div>

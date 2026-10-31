@@ -1,10 +1,16 @@
 import { useMemo, useState } from "react";
-import { format, parseISO } from "date-fns";
+import {
+  differenceInCalendarDays,
+  eachDayOfInterval,
+  format,
+  parseISO,
+  subDays,
+} from "date-fns";
 import { ArrowUpRight, Coins, Filter, WalletCards } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import {
-  Area,
-  AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
@@ -62,18 +68,75 @@ export function EarningsPage(): React.JSX.Element {
   const nonBillableSeconds = filtered
     .filter((session) => !session.billable)
     .reduce((sum, session) => sum + session.durationSeconds, 0);
-  const trendMap = new Map<string, number>();
+  // Daily totals in the main currency, oldest first, with a bar for every
+  // day in the period (including days with no work)
+  const trendCurrency = primary[0];
+  const dailyMinor = new Map<string, number>();
   for (const session of filtered) {
-    trendMap.set(
+    if (session.currencySnapshot !== trendCurrency) continue;
+    dailyMinor.set(
       session.workDate,
-      (trendMap.get(session.workDate) ?? 0) + sessionAmountMinor(session),
+      (dailyMinor.get(session.workDate) ?? 0) + sessionAmountMinor(session),
     );
   }
-  const trend = [...trendMap.entries()].map(([date, amount]) => ({
-    date,
-    label: format(parseISO(date), "MMM d"),
-    amount: amount / 100,
-  }));
+  const workedDays = [...dailyMinor.keys()].sort();
+  const firstDay = start || workedDays[0];
+  const lastDay = end || workedDays[workedDays.length - 1];
+  const hasPeriod = Boolean(firstDay && lastDay && firstDay <= lastDay);
+  const trend =
+    hasPeriod && firstDay && lastDay
+      ? eachDayOfInterval({
+          start: parseISO(firstDay),
+          end: parseISO(lastDay),
+        }).map((day) => {
+          const date = format(day, "yyyy-MM-dd");
+          return {
+            date,
+            label: format(day, "MMM d"),
+            amount: (dailyMinor.get(date) ?? 0) / 100,
+          };
+        })
+      : [];
+  const compactMoney = new Intl.NumberFormat(snapshot.settings.locale, {
+    style: "currency",
+    currency: trendCurrency,
+    notation: "compact",
+    maximumFractionDigits: 1,
+  });
+
+  // The same number of days just before this period, for comparison
+  let comparison: string | null = null;
+  if (hasPeriod && firstDay && lastDay) {
+    const length =
+      differenceInCalendarDays(parseISO(lastDay), parseISO(firstDay)) + 1;
+    const previousEnd = format(subDays(parseISO(firstDay), 1), "yyyy-MM-dd");
+    const previousStart = format(
+      subDays(parseISO(firstDay), length),
+      "yyyy-MM-dd",
+    );
+    const previousMinor = snapshot.sessions
+      .filter((session) => {
+        const project = snapshot.projects.find(
+          (item) => item.id === session.projectId,
+        );
+        return (
+          session.status === "completed" &&
+          session.deletedAt === null &&
+          session.currencySnapshot === trendCurrency &&
+          session.workDate >= previousStart &&
+          session.workDate <= previousEnd &&
+          (!clientId || project?.clientId === clientId) &&
+          (!projectId || session.projectId === projectId)
+        );
+      })
+      .reduce((sum, session) => sum + sessionAmountMinor(session), 0);
+    if (previousMinor > 0) {
+      const change = Math.round(
+        ((primary[1] - previousMinor) / previousMinor) * 100,
+      );
+      comparison = `${change >= 0 ? "+" : ""}${change}% vs the previous ${length} days`;
+    }
+  }
   const projects = snapshot.projects
     .map((project) => {
       const sessions = filtered.filter(
@@ -97,9 +160,9 @@ export function EarningsPage(): React.JSX.Element {
   return (
     <div className="page">
       <PageHeader
-        eyebrow="Reconciliation"
+        eyebrow="Money"
         title="Earnings"
-        description="Every amount is the sum of per-session integer calculations—never rounded display hours."
+        description="What your billable work earned, day by day and project by project."
       />
       <section className="filter-bar" aria-label="Earnings filters">
         <span className="filter-bar__icon">
@@ -162,7 +225,8 @@ export function EarningsPage(): React.JSX.Element {
           detail={
             currencies.size > 1
               ? `${currencies.size} separate currency totals`
-              : `${filtered.filter((session) => session.billable).length} billable sessions`
+              : (comparison ??
+                `${filtered.filter((session) => session.billable).length} billable sessions`)
           }
           icon={<Coins size={19} />}
         />
@@ -175,7 +239,7 @@ export function EarningsPage(): React.JSX.Element {
         <MetricCard
           label="Non-billable time"
           value={formatDuration(nonBillableSeconds)}
-          detail="Recorded, excluded from money"
+          detail="Recorded but not billed"
           icon={<ArrowUpRight size={19} />}
         />
       </section>
@@ -184,8 +248,8 @@ export function EarningsPage(): React.JSX.Element {
           <section className="panel chart-panel">
             <header className="panel__header">
               <div>
-                <h2>Earnings trend</h2>
-                <p>Canonical session amounts by work date</p>
+                <h2>Earned per day</h2>
+                <p>Billable work, oldest to newest</p>
               </div>
               {currencies.size > 1 ? (
                 <Badge tone="amber">Showing {primary[0]} trend</Badge>
@@ -193,52 +257,58 @@ export function EarningsPage(): React.JSX.Element {
             </header>
             <div className="chart-wrap">
               <ResponsiveContainer width="100%" height={280}>
-                <AreaChart
+                <BarChart
                   data={trend}
-                  margin={{ top: 10, right: 15, left: -10, bottom: 0 }}
+                  margin={{ top: 10, right: 8, left: 0, bottom: 0 }}
                 >
-                  <CartesianGrid
-                    stroke="#e5eaf2"
-                    strokeDasharray="4 4"
-                    vertical={false}
-                  />
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} />
                   <XAxis
                     dataKey="label"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: "#718096", fontSize: 12 }}
+                    tick={{ fontSize: 12 }}
+                    minTickGap={16}
                   />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: "#718096", fontSize: 11 }}
+                    tick={{ fontSize: 11 }}
+                    width={58}
+                    tickFormatter={(value) =>
+                      compactMoney.format(Number(value))
+                    }
                   />
                   <Tooltip
+                    labelFormatter={(_, payload) => {
+                      const date = (
+                        payload?.[0]?.payload as { date?: string } | undefined
+                      )?.date;
+                      return date ? format(parseISO(date), "EEEE, MMM d") : "";
+                    }}
                     formatter={(value) => [
                       formatMoney(
                         Math.round(Number(value) * 100),
-                        primary[0],
+                        trendCurrency,
                         snapshot.settings.locale,
                       ),
-                      "Earnings",
+                      "Earned",
                     ]}
                   />
-                  <Area
-                    type="monotone"
+                  <Bar
                     dataKey="amount"
-                    stroke="#3b66dc"
-                    strokeWidth={2.5}
-                    fill="#e6edff"
+                    className="chart-bar"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={28}
                   />
-                </AreaChart>
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </section>
           <section className="table-card">
             <header className="panel__header">
               <div>
-                <h2>Project reconciliation</h2>
-                <p>Drill down to the source sessions behind each total</p>
+                <h2>By project</h2>
+                <p>Time and earnings for each project in this period</p>
               </div>
             </header>
             <div className="table-scroll">
@@ -296,7 +366,7 @@ export function EarningsPage(): React.JSX.Element {
       ) : (
         <EmptyState
           title="No earnings in this view"
-          description="Change the period or organization filters to reconcile recorded work."
+          description="Try a different date range, client or project."
         />
       )}
     </div>

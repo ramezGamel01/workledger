@@ -105,7 +105,7 @@ export function ClientsPage(): React.JSX.Element {
       <PageHeader
         eyebrow="Organization"
         title="Clients"
-        description="Manage billing parties without changing snapshots already frozen in issued invoices."
+        description="The people and companies you bill. Editing a client never changes invoices you already issued."
         actions={
           <Button onClick={showForm ? resetForm : beginCreate}>
             <Plus size={17} /> New client

@@ -4,6 +4,7 @@ import {
   replaceLedgerSnapshot,
 } from "@/db/database";
 import type { EvidenceAsset, LedgerSnapshot } from "@/domain/models";
+import { isDemo } from "@/demo/mode";
 
 type CloudEvidenceAsset = Omit<EvidenceAsset, "blob" | "thumbnailBlob">;
 
@@ -51,7 +52,9 @@ let currentStatus: CloudSyncStatus = {
 };
 
 function cloudEnabled(): boolean {
-  return typeof window !== "undefined" && import.meta.env.MODE !== "test";
+  return (
+    typeof window !== "undefined" && import.meta.env.MODE !== "test" && !isDemo
+  );
 }
 
 function publish(
