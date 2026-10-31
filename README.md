@@ -4,9 +4,12 @@
 
 WorkLedger is a private cloud-backed work tracking application for hourly contractors. It records live and historical work, keeps proof of work beside the time it supports, calculates earnings, and produces professional invoices and work-activity reports.
 
-**Case study:** https://ramezgamel01.github.io/case-workledger.html
+**[Try the live demo](https://ramezgamel01.github.io/workledger/)** with sample data (nothing leaves your browser) · [Read the case study](https://ramezgamel01.github.io/case-workledger.html)
 
-![WorkLedger dashboard](docs/screenshots/dashboard.jpg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-dark.jpg">
+  <img alt="WorkLedger dashboard" src="docs/screenshots/dashboard.jpg">
+</picture>
 
 | Timesheet                                    | Earnings                                   | Invoices                                   |
 | -------------------------------------------- | ------------------------------------------ | ------------------------------------------ |
@@ -83,6 +86,15 @@ Client → Project → Work Session → Evidence
 ```bash
 pnpm install
 pnpm dev
+```
+
+The public demo is a static build of the same app: sample data is seeded in the
+browser, cloud sync is off, and a Reset button restores the sample data. The
+Demo workflow publishes it to GitHub Pages on every push to `main`.
+
+```bash
+pnpm dev:demo     # demo with hot reload
+pnpm build:demo   # static build in dist-demo/
 ```
 
 Quality gates:

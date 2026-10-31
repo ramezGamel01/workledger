@@ -86,9 +86,9 @@ export function ProofPage(): React.JSX.Element {
   return (
     <div className="page">
       <PageHeader
-        eyebrow="Private evidence"
+        eyebrow="Proof"
         title="Proof of Work"
-        description="Screenshots, files, and links stay beside the work they support and sync privately across your devices."
+        description="Screenshots, files and links kept next to the work they prove."
         actions={
           <Button onClick={() => openDialog("add-evidence")}>
             <Plus size={17} /> Add proof

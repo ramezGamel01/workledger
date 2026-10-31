@@ -5,6 +5,7 @@ import { useOutletContext } from "react-router-dom";
 import { Badge, EmptyState, PageHeader } from "@/components/ui";
 import {
   formatDuration,
+  sourceLabel,
   formatMoney,
   sessionAmountMinor,
 } from "@/domain/format";
@@ -47,7 +48,7 @@ export function TimesheetPage(): React.JSX.Element {
       <PageHeader
         eyebrow="Review"
         title="Timesheet"
-        description="A dense, filterable view of the same canonical work sessions."
+        description="Every work session in one table. Filter by date or project."
       />
       <section className="filter-bar" aria-label="Timesheet filters">
         <span className="filter-bar__icon">
@@ -149,7 +150,7 @@ export function TimesheetPage(): React.JSX.Element {
                         <Badge
                           tone={session.source === "tracked" ? "green" : "blue"}
                         >
-                          {session.source.replaceAll("_", " ")}
+                          {sourceLabel(session.source)}
                         </Badge>
                       </td>
                       <td data-label="Duration" className="numeric">

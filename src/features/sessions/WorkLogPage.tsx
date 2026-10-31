@@ -73,9 +73,9 @@ export function WorkLogPage(): React.JSX.Element {
   return (
     <div className="page">
       <PageHeader
-        eyebrow="Canonical records"
+        eyebrow="Records"
         title="Work Log"
-        description="Every completed session, grouped by its stable local work date."
+        description="Every finished session, grouped by the day you did the work."
         actions={
           <Button onClick={() => openDialog("previous-work")}>
             <Plus size={17} /> Add previous work
@@ -117,9 +117,9 @@ export function WorkLogPage(): React.JSX.Element {
             onChange={(event) => setSource(event.target.value)}
           >
             <option value="">All sources</option>
-            <option value="tracked">Tracked</option>
-            <option value="manual_range">Manual range</option>
-            <option value="manual_duration">Manual duration</option>
+            <option value="tracked">Timer</option>
+            <option value="manual_range">Added manually</option>
+            <option value="manual_duration">Added as hours</option>
           </select>
         </label>
         <label>

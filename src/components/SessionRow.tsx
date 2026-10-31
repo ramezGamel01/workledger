@@ -29,7 +29,7 @@ export function SessionRow({
   const amount = sessionAmountMinor(session);
   const sourceLabel =
     session.source === "tracked"
-      ? "Tracked"
+      ? "Timer"
       : session.source === "manual_range"
         ? "Added manually"
         : "Added as hours";

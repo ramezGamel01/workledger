@@ -2754,6 +2754,7 @@ input[type="checkbox"] {
   letter-spacing: 0;
 }
 .metric-card > strong,
+.timesheet-summary strong,
 .session-row__numbers strong,
 .report-summary strong,
 .entity-card__stats strong,

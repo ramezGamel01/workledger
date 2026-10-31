@@ -2,6 +2,13 @@ import { formatInTimeZone } from "date-fns-tz";
 
 import type { WorkSession } from "@/domain/models";
 
+/** How a session was recorded, in plain words. */
+export function sourceLabel(source: WorkSession["source"]): string {
+  if (source === "tracked") return "Timer";
+  if (source === "manual_range") return "Added manually";
+  return "Added as hours";
+}
+
 export function normalizeName(value: string): string {
   return value
     .normalize("NFKC")

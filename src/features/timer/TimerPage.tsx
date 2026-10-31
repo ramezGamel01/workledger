@@ -92,7 +92,7 @@ export function TimerPage(): React.JSX.Element {
       <PageHeader
         eyebrow="Live tracking"
         title="Timer"
-        description="Track exact work segments. Pauses, reloads, and browser restarts never rely on ticking memory."
+        description="Start, pause and stop with confidence: the timer keeps exact time even if you reload or close the browser."
         actions={
           <Button
             variant="secondary"
@@ -267,7 +267,7 @@ export function TimerPage(): React.JSX.Element {
           ) : (
             <EmptyState
               title="Create a project before tracking"
-              description="A project supplies the timezone, currency, and hourly-rate snapshot for every session."
+              description="Each project sets the time zone, currency and hourly rate for the work you track on it."
               action={
                 <Link
                   className="button button--primary button--md"
@@ -309,7 +309,7 @@ export function TimerPage(): React.JSX.Element {
         ) : (
           <EmptyState
             title="No completed sessions today"
-            description="Stopped timers appear here immediately. An active timer remains visible across every route."
+            description="Stopped timers show up here right away. A running timer stays visible on every page."
           />
         )}
       </section>
