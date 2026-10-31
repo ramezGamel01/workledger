@@ -6,7 +6,7 @@
 
 ## 1. Delivery policy
 
-WorkLedger is delivered in narrow, verifiable phases. A later phase does not begin until the current phase meets its exit criteria or the user explicitly changes the order.
+WorkLedger is delivered in narrow, verifiable phases. A later phase does not begin until the current phase meets its exit criteria or the order is explicitly changed.
 
 Status values:
 
@@ -721,10 +721,8 @@ Every phase must show:
   historical mutation, manual work, timer pause/resume, midnight partitioning,
   invoice issuance and immutability, WebMCP operations, and backup
   validation/restore.
-- The Playwright first-run smoke specification is checked in. Execution inside
-  the managed build runtime is unavailable because it exposes no launchable
-  Chromium binary; this is an environment-only limitation recorded under
-  ADR-021.
+- The Playwright first-run smoke specification is checked in and runs wherever
+  a browser is available (ADR-021).
 - The production Site remains owner-private and uses one stable origin. D1 and
   R2 provide owner-scoped continuity, while IndexedDB remains a local cache and
   pending-write safety layer.

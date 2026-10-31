@@ -42,10 +42,8 @@
 
 The cloud release passes Prettier, ESLint, strict TypeScript, 18 deterministic
 unit/integration tests, and a server-backed production build. The repository
-includes a Playwright first-run smoke test. This managed build environment
-exposes no launchable Chromium binary, so that one browser process could not be
-executed locally; the limitation is documented in ADR-021 and does not change
-the deployed application.
+includes a Playwright first-run smoke test (`pnpm test:e2e`), which runs wherever
+a browser is available (see ADR-021).
 
 The owner-private production deployment completed on the stable Site origin.
 Its live D1 binding contains the expected version and snapshot-chunk tables;

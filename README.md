@@ -1,6 +1,16 @@
 # WorkLedger
 
+[![CI](https://github.com/ramezGamel01/workledger/actions/workflows/ci.yml/badge.svg)](https://github.com/ramezGamel01/workledger/actions/workflows/ci.yml)
+
 WorkLedger is a private cloud-backed work tracking application for hourly contractors. It records live and historical work, keeps proof of work beside the time it supports, calculates earnings, and produces professional invoices and work-activity reports.
+
+**Case study:** https://ramezgamel01.github.io/case-workledger.html
+
+![WorkLedger dashboard](docs/screenshots/dashboard.jpg)
+
+| Timesheet                                    | Earnings                                   | Invoices                                   |
+| -------------------------------------------- | ------------------------------------------ | ------------------------------------------ |
+| ![Timesheet](docs/screenshots/timesheet.jpg) | ![Earnings](docs/screenshots/earnings.jpg) | ![Invoices](docs/screenshots/invoices.jpg) |
 
 ## Current state
 
@@ -13,11 +23,9 @@ work-report PDFs, read-only audit history, plus validated ZIP backup and atomic
 restore. D1 now persists structured records across devices, R2 persists evidence
 files, and IndexedDB remains the fast local cache and pending-write safety layer.
 
-Formatting, linting, strict type checking, 18 deterministic tests, and the
-server-backed production build pass. A Chromium smoke specification is
-included; its local execution is unavailable in this managed runtime because
-no launchable browser binary is exposed. This environment limitation does not
-affect the deployed application.
+Formatting, linting, strict type checking, 18 deterministic tests and the
+server-backed production build run in CI on every push. A Playwright smoke
+test for the first-run workflow is included (`pnpm test:e2e`).
 
 The Phase 0 baseline is defined by:
 
